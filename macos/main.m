@@ -7,31 +7,39 @@
 
 #import <Cocoa/Cocoa.h>
 
+typedef NS_ENUM(NSInteger, DisplayMode) {
+    DisplayModeQuotaAndTokens = 0, // ⚡ 65.1% · 9.2M
+    DisplayModeQuotaOnly      = 1, // ⚡ 65.1%
+    DisplayModeIconOnly       = 2  // ⚡
+};
+
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 @property (strong, nonatomic) NSStatusItem *statusItem;
 @property (strong, nonatomic) NSTimer *timer;
 @property (strong, nonatomic) NSDictionary *latestStats;
-@property (assign, nonatomic) NSInteger displayMode; // 0: Quota + Tokens, 1: Quota, 2: Tokens, 3: Icon
+@property (assign, nonatomic) DisplayMode displayMode;
 @property (assign, nonatomic) BOOL notifiedLowQuota;
 @property (assign, nonatomic) BOOL serverAutoStartAttempted;
+@property (assign, nonatomic) long long lastObservedTokens;
 @property (strong, nonatomic) NSISO8601DateFormatter *isoFormatter;
 @end
 
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-    self.displayMode = 0;
+    self.displayMode = DisplayModeQuotaAndTokens;
     self.notifiedLowQuota = NO;
     self.serverAutoStartAttempted = NO;
+    self.lastObservedTokens = 0;
     self.isoFormatter = [[NSISO8601DateFormatter alloc] init];
 
-    // Ensure running as an accessory / menu bar app (no Dock icon)
+    // Accessory menu bar extra: no Dock icon, never steal window focus
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
 
     [self setupStatusItem];
     [self fetchStats];
 
-    // Schedule 5-second polling timer on common run loop modes so menu interaction doesn't pause it
+    // Periodic polling timer on NSRunLoopCommonModes so UI interaction does not freeze the timer
     self.timer = [NSTimer timerWithTimeInterval:5.0
                                          target:self
                                        selector:@selector(fetchStats)
@@ -42,7 +50,7 @@
 
 - (void)setupStatusItem {
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
-    self.statusItem.button.title = @"⚡ --%";
+    self.statusItem.button.title = @"⚡ --.-%";
     self.statusItem.button.toolTip = @"Antigravity Token Monitor";
     [self updateMenu];
 }
@@ -80,11 +88,11 @@
     int days = hours / 24;
 
     if (days > 0) {
-        return [NSString stringWithFormat:@"%dd %dh 后重置", days, hours % 24];
+        return [NSString stringWithFormat:@"%dd %dh 后刷新", days, hours % 24];
     } else if (hours > 0) {
-        return [NSString stringWithFormat:@"%dh %dm 后重置", hours, minutes];
+        return [NSString stringWithFormat:@"%dh %dm 后刷新", hours, minutes];
     } else {
-        return [NSString stringWithFormat:@"%dm 后重置", minutes];
+        return [NSString stringWithFormat:@"%dm 后刷新", minutes];
     }
 }
 
@@ -117,7 +125,7 @@
             NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError];
             if (json && [json isKindOfClass:[NSDictionary class]]) {
                 strongSelf.latestStats = json;
-                strongSelf.serverAutoStartAttempted = NO; // reset
+                strongSelf.serverAutoStartAttempted = NO;
                 [strongSelf updateUIWithStats:json];
             } else {
                 [strongSelf handleFetchError:jsonError];
@@ -133,7 +141,6 @@
     }
     [self updateMenu];
 
-    // If server is not responding, attempt to auto-launch server.py once
     if (!self.serverAutoStartAttempted) {
         self.serverAutoStartAttempted = YES;
         [self attemptAutoStartServer];
@@ -144,11 +151,14 @@
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
         NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
         NSString *parentDir = [bundlePath stringByDeletingLastPathComponent];
-        
+        NSString *cwd = [[NSFileManager defaultManager] currentDirectoryPath];
+        NSString *homeDir = NSHomeDirectory();
+
         NSArray *candidatePaths = @[
             [parentDir stringByAppendingPathComponent:@"server.py"],
             [parentDir stringByAppendingPathComponent:@"../server.py"],
-            @"/Users/mac/.gemini/antigravity/scratch/antigravity-token-monitor/server.py"
+            [cwd stringByAppendingPathComponent:@"server.py"],
+            [homeDir stringByAppendingPathComponent:@".gemini/antigravity/scratch/antigravity-token-monitor/server.py"]
         ];
 
         NSString *foundScript = nil;
@@ -168,7 +178,7 @@
             @try {
                 [task launch];
             } @catch (NSException *e) {
-                // ignore
+                // ignore launch errors
             }
         }
     });
@@ -180,7 +190,7 @@
     NSDictionary *quota = stats[@"quota"];
     NSDictionary *summary = stats[@"summary"];
     
-    // Find Gemini 5h quota fraction
+    // Extract 5h fraction
     double gemini5hFraction = -1.0;
     NSArray *groups = quota[@"groups"];
     if ([groups isKindOfClass:[NSArray class]]) {
@@ -197,42 +207,40 @@
         }
     }
 
-    // Get total output tokens
+    // Extract total output or total tokens
     long long outputTokens = [summary[@"output_tokens"] longLongValue];
     if (outputTokens == 0) {
         outputTokens = [summary[@"total_tokens"] longLongValue];
     }
+    long long totalTokens = [summary[@"total_tokens"] longLongValue];
 
-    // Check low-quota notification
+    // Low Quota Alert: only trigger when <= 15% AND continuous consumption is active
     if (gemini5hFraction >= 0.0 && gemini5hFraction <= 0.15) {
-        if (!self.notifiedLowQuota) {
-            self.notifiedLowQuota = YES;
-            [self sendNotificationWithTitle:@"Antigravity 额度预警"
-                                    message:[NSString stringWithFormat:@"Gemini 5小时额度仅剩 %.1f%%，建议放缓调用或切换模型。", gemini5hFraction * 100.0]];
+        if (self.lastObservedTokens > 0 && totalTokens > self.lastObservedTokens) {
+            if (!self.notifiedLowQuota) {
+                self.notifiedLowQuota = YES;
+                [self sendNotificationWithTitle:@"Antigravity 额度预警"
+                                        message:[NSString stringWithFormat:@"Gemini 5小时额度仅剩 %.1f%%，建议放缓调用或切换模型。", gemini5hFraction * 100.0]];
+            }
         }
     } else if (gemini5hFraction > 0.25) {
-        self.notifiedLowQuota = NO; // Reset alert threshold
+        self.notifiedLowQuota = NO;
     }
+    self.lastObservedTokens = totalTokens;
 
-    // Update Status Item Title based on displayMode
-    NSString *quotaStr = (gemini5hFraction >= 0.0) ? [NSString stringWithFormat:@"%.0f%%", gemini5hFraction * 100.0] : @"--%";
+    // Status Item Title: exact 1 decimal digit precision (e.g. 65.1%)
+    NSString *quotaStr = (gemini5hFraction >= 0.0) ? [NSString stringWithFormat:@"%.1f%%", gemini5hFraction * 100.0] : @"--.-%";
     NSString *tokenStr = [self formatTokens:outputTokens];
 
     switch (self.displayMode) {
-        case 0: // Quota + Tokens
+        case DisplayModeQuotaAndTokens:
             self.statusItem.button.title = [NSString stringWithFormat:@"⚡ %@ · %@", quotaStr, tokenStr];
             break;
-        case 1: // Quota only
+        case DisplayModeQuotaOnly:
             self.statusItem.button.title = [NSString stringWithFormat:@"⚡ %@", quotaStr];
             break;
-        case 2: // Tokens only
-            self.statusItem.button.title = [NSString stringWithFormat:@"⚡ %@", tokenStr];
-            break;
-        case 3: // Icon only
+        case DisplayModeIconOnly:
             self.statusItem.button.title = @"⚡";
-            break;
-        default:
-            self.statusItem.button.title = [NSString stringWithFormat:@"⚡ %@", quotaStr];
             break;
     }
 
@@ -248,14 +256,13 @@
     NSDictionary *stats = self.latestStats;
     NSDictionary *quota = stats[@"quota"];
     NSDictionary *summary = stats[@"summary"];
-    NSDictionary *today = stats[@"today"];
 
-    // 1. Header: Status & PID
-    BOOL isOnline = (stats != nil);
+    // 1. Header: Language Server Status & PID
+    BOOL isLSConnected = (quota != nil && [quota[@"status"] isEqualToString:@"ok"]);
     NSNumber *pidNum = quota[@"pid"];
-    NSString *headerTitle = isOnline ?
-        [NSString stringWithFormat:@"● Antigravity 监控在线 (PID: %@)", pidNum ?: @"-"] :
-        @"○ Antigravity 监控离线 (正在重连...)";
+    NSString *headerTitle = isLSConnected ?
+        [NSString stringWithFormat:@"● Antigravity 运行中 (PID: %@)", pidNum ?: @"-"] :
+        @"○ Antigravity 离线 (未检测到进程)";
     
     NSMenuItem *headerItem = [[NSMenuItem alloc] initWithTitle:headerTitle action:nil keyEquivalent:@""];
     headerItem.enabled = NO;
@@ -264,7 +271,7 @@
     [menu addItem:[NSMenuItem separatorItem]];
 
     // 2. Quotas Section
-    NSMenuItem *quotaSection = [[NSMenuItem alloc] initWithTitle:@"⏱️ 实时限额 (Quotas)" action:nil keyEquivalent:@""];
+    NSMenuItem *quotaSection = [[NSMenuItem alloc] initWithTitle:@"⏱️ 额度监控" action:nil keyEquivalent:@""];
     quotaSection.enabled = NO;
     [menu addItem:quotaSection];
 
@@ -278,13 +285,13 @@
 
                 NSString *itemText;
                 if ([b[@"bucketId"] isEqualToString:@"gemini-5h"]) {
-                    itemText = [NSString stringWithFormat:@"   %@ Gemini 5h 限额: %.1f%% (%@)", emoji, rem * 100.0, resetStr];
+                    itemText = [NSString stringWithFormat:@"   Gemini 5h 剩余:  %.1f%% %@ (%@)", rem * 100.0, emoji, resetStr];
                 } else if ([b[@"bucketId"] isEqualToString:@"gemini-weekly"]) {
-                    itemText = [NSString stringWithFormat:@"   %@ Gemini 周限额: %.1f%% (%@)", emoji, rem * 100.0, resetStr];
+                    itemText = [NSString stringWithFormat:@"   Gemini 周剩余:   %.1f%% %@ (%@)", rem * 100.0, emoji, resetStr];
                 } else if ([b[@"bucketId"] isEqualToString:@"3p-5h"]) {
-                    itemText = [NSString stringWithFormat:@"   %@ Claude/GPT 5h: %.1f%% (%@)", emoji, rem * 100.0, resetStr];
+                    itemText = [NSString stringWithFormat:@"   3P (Claude/GPT): %.1f%% %@", rem * 100.0, emoji];
                 } else {
-                    itemText = [NSString stringWithFormat:@"   %@ %@: %.1f%%", emoji, bName, rem * 100.0];
+                    itemText = [NSString stringWithFormat:@"   %@: %.1f%% %@", bName, rem * 100.0, emoji];
                 }
 
                 NSMenuItem *bItem = [[NSMenuItem alloc] initWithTitle:itemText action:nil keyEquivalent:@""];
@@ -301,7 +308,7 @@
     [menu addItem:[NSMenuItem separatorItem]];
 
     // 3. Tokens & Usage Section
-    NSMenuItem *tokenSection = [[NSMenuItem alloc] initWithTitle:@"📊 Token 统计" action:nil keyEquivalent:@""];
+    NSMenuItem *tokenSection = [[NSMenuItem alloc] initWithTitle:@"📊 Token 消耗" action:nil keyEquivalent:@""];
     tokenSection.enabled = NO;
     [menu addItem:tokenSection];
 
@@ -309,38 +316,32 @@
         long long total = [summary[@"total_tokens"] longLongValue];
         long long prompt = [summary[@"prompt_tokens"] longLongValue];
         long long output = [summary[@"output_tokens"] longLongValue];
-        double cacheRate = [summary[@"cache_discount_rate"] doubleValue];
-        double estCost = [summary[@"estimated_cost_usd"] doubleValue];
-        double savedCost = [summary[@"saved_cost_usd"] doubleValue];
+        long long cached = [summary[@"cached_tokens"] longLongValue];
+        
+        // Calculate true cache discount rate and fetch costs using exact backend keys
+        double cacheRate = (total > 0) ? ((double)cached / (double)total) * 100.0 : 0.0;
+        double estCost = [summary[@"cost_usd"] doubleValue];
+        double savedCost = [summary[@"saved_usd"] doubleValue];
 
-        NSString *totalLine = [NSString stringWithFormat:@"   总计 Token: %@", [self formatNumberWithCommas:total]];
+        NSString *totalLine = [NSString stringWithFormat:@"   总消耗 Token:    %@", [self formatNumberWithCommas:total]];
         NSMenuItem *totalItem = [[NSMenuItem alloc] initWithTitle:totalLine action:nil keyEquivalent:@""];
         totalItem.enabled = NO;
         [menu addItem:totalItem];
 
-        NSString *ioLine = [NSString stringWithFormat:@"   Prompt: %@  |  Output: %@", [self formatTokens:prompt], [self formatTokens:output]];
+        NSString *ioLine = [NSString stringWithFormat:@"   Prompt / Output: %@ / %@", [self formatTokens:prompt], [self formatTokens:output]];
         NSMenuItem *ioItem = [[NSMenuItem alloc] initWithTitle:ioLine action:nil keyEquivalent:@""];
         ioItem.enabled = NO;
         [menu addItem:ioItem];
 
-        NSString *cacheLine = [NSString stringWithFormat:@"   缓存命中: %.1f%% (节省 $%.2f)", cacheRate * 100.0, savedCost];
+        NSString *cacheLine = [NSString stringWithFormat:@"   Context 缓存节省: %.1f%% (省下 $%.2f)", cacheRate, savedCost];
         NSMenuItem *cacheItem = [[NSMenuItem alloc] initWithTitle:cacheLine action:nil keyEquivalent:@""];
         cacheItem.enabled = NO;
         [menu addItem:cacheItem];
 
-        NSString *costLine = [NSString stringWithFormat:@"   预估总费用: $%.2f", estCost];
+        NSString *costLine = [NSString stringWithFormat:@"   预估总费用:       $%.2f", estCost];
         NSMenuItem *costItem = [[NSMenuItem alloc] initWithTitle:costLine action:nil keyEquivalent:@""];
         costItem.enabled = NO;
         [menu addItem:costItem];
-
-        if (today && [today[@"total_tokens"] longLongValue] > 0) {
-            long long todayTokens = [today[@"total_tokens"] longLongValue];
-            double todayCost = [today[@"estimated_cost_usd"] doubleValue];
-            NSString *todayLine = [NSString stringWithFormat:@"   今日消耗: %@ (~$%.2f)", [self formatTokens:todayTokens], todayCost];
-            NSMenuItem *todayItem = [[NSMenuItem alloc] initWithTitle:todayLine action:nil keyEquivalent:@""];
-            todayItem.enabled = NO;
-            [menu addItem:todayItem];
-        }
     } else {
         NSMenuItem *noSummary = [[NSMenuItem alloc] initWithTitle:@"   暂无消耗数据" action:nil keyEquivalent:@""];
         noSummary.enabled = NO;
@@ -350,7 +351,7 @@
     [menu addItem:[NSMenuItem separatorItem]];
 
     // 4. Action Items
-    NSMenuItem *webItem = [[NSMenuItem alloc] initWithTitle:@"🌐 打开完整 Web 仪表盘..."
+    NSMenuItem *webItem = [[NSMenuItem alloc] initWithTitle:@"🌐 打开 Web 完整仪表盘..."
                                                      action:@selector(openDashboard:)
                                               keyEquivalent:@"o"];
     webItem.target = self;
@@ -362,10 +363,10 @@
     refreshItem.target = self;
     [menu addItem:refreshItem];
 
-    // Display mode switcher
-    NSArray *modes = @[@"配额 + Token", @"仅显示配额", @"仅显示 Token", @"仅显示图标"];
+    // Display mode switcher (3 modes: 配额+Token / 仅配额 / 仅图标)
+    NSArray *modes = @[@"配额 + Token", @"仅配额", @"仅图标"];
     NSString *currentModeName = modes[self.displayMode % modes.count];
-    NSString *modeTitle = [NSString stringWithFormat:@"🔀 顶栏格式: %@", currentModeName];
+    NSString *modeTitle = [NSString stringWithFormat:@"🔀 切换顶栏显示 (%@)", currentModeName];
     NSMenuItem *modeItem = [[NSMenuItem alloc] initWithTitle:modeTitle
                                                       action:@selector(toggleDisplayMode:)
                                                keyEquivalent:@""];
@@ -395,7 +396,7 @@
 }
 
 - (void)toggleDisplayMode:(id)sender {
-    self.displayMode = (self.displayMode + 1) % 4;
+    self.displayMode = (DisplayMode)((self.displayMode + 1) % 3);
     if (self.latestStats) {
         [self updateUIWithStats:self.latestStats];
     } else {
