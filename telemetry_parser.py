@@ -213,7 +213,7 @@ def calculate_step_cost(metrics: Dict[str, Any], exchange_rate: float = DEFAULT_
 class TelemetryParser:
     def __init__(
         self,
-        base_dir: str = "/Users/mac/.gemini/antigravity",
+        base_dir: str = "~/.gemini/antigravity",
         exchange_rate: float = DEFAULT_USD_CNY_RATE
     ):
         self.base_dir = os.path.expanduser(base_dir)
@@ -239,7 +239,7 @@ class TelemetryParser:
                 meta_map[cid] = {
                     "title": title or "Untitled Session",
                     "last_modified": last_mod,
-                    "workspace": w_uris,
+                    "workspace": w_uris or "",
                     "step_count": steps
                 }
             conn.close()
@@ -339,7 +339,10 @@ class TelemetryParser:
             "saved_cny": 0.0,
         }
 
-        today_str = datetime.date.today().isoformat()
+        now = datetime.datetime.now()
+        today_date = now.date()
+        seven_days_ago = today_date - datetime.timedelta(days=7)
+
         today_totals = {
             "prompt_tokens": 0,
             "cached_tokens": 0,
@@ -351,6 +354,22 @@ class TelemetryParser:
             "cost_cny": 0.0,
         }
 
+        last_7d_totals = {
+            "prompt_tokens": 0,
+            "cached_tokens": 0,
+            "thinking_tokens": 0,
+            "content_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "cost_usd": 0.0,
+            "cost_cny": 0.0,
+        }
+
+        daily_timeline = {}
+        for d in range(7):
+            day_str = (today_date - datetime.timedelta(days=d)).strftime("%m-%d")
+            daily_timeline[day_str] = {"prompt": 0, "cached": 0, "output": 0, "thinking": 0, "cost_usd": 0.0}
+
         model_breakdown = {}
         conversations_list = []
 
@@ -359,7 +378,9 @@ class TelemetryParser:
             db_path = os.path.join(self.conv_dir, f"{cid}.db")
             mtime = os.path.getmtime(db_path)
             dt = datetime.datetime.fromtimestamp(mtime)
-            is_today = dt.date().isoformat() == today_str
+            c_date = dt.date()
+            is_today = (c_date == today_date)
+            is_7d = (c_date >= seven_days_ago)
 
             parsed = self.parse_single_conversation(cid)
             if not parsed or parsed["step_count"] == 0:
@@ -371,6 +392,16 @@ class TelemetryParser:
                 global_totals[k] += t[k]
                 if is_today:
                     today_totals[k] += t[k]
+                if is_7d:
+                    last_7d_totals[k] += t[k]
+
+            day_key = c_date.strftime("%m-%d")
+            if day_key in daily_timeline:
+                daily_timeline[day_key]["prompt"] += t["prompt_tokens"]
+                daily_timeline[day_key]["cached"] += t["cached_tokens"]
+                daily_timeline[day_key]["output"] += t["output_tokens"]
+                daily_timeline[day_key]["thinking"] += t["thinking_tokens"]
+                daily_timeline[day_key]["cost_usd"] += t["cost_usd"]
 
             global_totals["cost_usd"] += t["cost_usd"]
             global_totals["cost_cny"] += t["cost_cny"]
@@ -380,6 +411,9 @@ class TelemetryParser:
             if is_today:
                 today_totals["cost_usd"] += t["cost_usd"]
                 today_totals["cost_cny"] += t["cost_cny"]
+            if is_7d:
+                last_7d_totals["cost_usd"] += t["cost_usd"]
+                last_7d_totals["cost_cny"] += t["cost_cny"]
 
             m_name = parsed["model"]
             if m_name not in model_breakdown:
@@ -401,6 +435,7 @@ class TelemetryParser:
             conversations_list.append({
                 "conversation_id": cid,
                 "title": meta.get("title", "Session " + cid[:8]),
+                "workspace": meta.get("workspace", ""),
                 "last_modified": dt.isoformat(),
                 "step_count": parsed["step_count"],
                 "model": parsed["model"],
@@ -414,6 +449,8 @@ class TelemetryParser:
             global_totals[k] = round(global_totals[k], 4)
             if k in today_totals:
                 today_totals[k] = round(today_totals[k], 4)
+            if k in last_7d_totals:
+                last_7d_totals[k] = round(last_7d_totals[k], 4)
 
         for m in model_breakdown:
             model_breakdown[m]["cost_usd"] = round(model_breakdown[m]["cost_usd"], 4)
@@ -422,6 +459,8 @@ class TelemetryParser:
         return {
             "summary": global_totals,
             "today": today_totals,
+            "last_7d": last_7d_totals,
+            "daily_timeline": [{"day": k, **v} for k, v in reversed(list(daily_timeline.items()))],
             "models": model_breakdown,
             "conversations": conversations_list,
             "exchange_rate": self.exchange_rate,

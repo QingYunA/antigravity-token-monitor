@@ -38,7 +38,7 @@ class LanguageServerClient:
                 return None
 
             # 2. Check if main.log has the exact port
-            log_path = "/Users/mac/Library/Logs/Antigravity/main.log"
+            log_path = os.path.expanduser("~/Library/Logs/Antigravity/main.log")
             hinted_ports = []
             if os.path.exists(log_path):
                 try:
@@ -73,24 +73,14 @@ class LanguageServerClient:
             # Test available ports to see which one answers Connect-RPC with genuine quota
             active_port = None
             for p in ports:
-                try:
-                    req = urllib.request.Request(
-                        f"https://127.0.0.1:{p}/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary",
-                        data=b"{}",
-                        headers={
-                            "X-Codeium-Csrf-Token": csrf_token,
-                            "Content-Type": "application/json"
-                        },
-                        method="POST"
-                    )
-                    with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=1.0) as resp:
-                        if resp.status == 200:
-                            body = resp.read()
-                            if b'"groups"' in body or b'"response"' in body:
-                                active_port = p
-                                break
-                except Exception:
-                    continue
+                data = self._post_rpc(
+                    f"https://127.0.0.1:{p}/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary",
+                    csrf_token,
+                    timeout=1.0
+                )
+                if data and ("groups" in data.get("response", {}) or "response" in data):
+                    active_port = p
+                    break
 
             if active_port:
                 conn_info = {
@@ -104,6 +94,25 @@ class LanguageServerClient:
             return None
         except Exception:
             return None
+
+    def _post_rpc(self, url: str, csrf_token: str, timeout: float = 2.0) -> Optional[Dict[str, Any]]:
+        """Unified Connect-RPC POST helper with CSRF authentication and SSL handling."""
+        try:
+            req = urllib.request.Request(
+                url,
+                data=b"{}",
+                headers={
+                    "X-Codeium-Csrf-Token": csrf_token,
+                    "Content-Type": "application/json"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, context=self._ssl_ctx, timeout=timeout) as resp:
+                if resp.status == 200:
+                    return json.loads(resp.read().decode("utf-8"))
+        except Exception:
+            pass
+        return None
 
     def get_connection(self) -> Optional[Dict[str, Any]]:
         if self._cached_conn:
@@ -135,43 +144,29 @@ class LanguageServerClient:
             "port": port,
             "pid": conn["pid"],
             "groups": [],
-            "user_tier": "Standard",
+            "user_tier": "Google AI Pro",
             "last_checked": datetime.datetime.now().isoformat()
         }
 
         # 1. Call RetrieveUserQuotaSummary
-        try:
-            req_quota = urllib.request.Request(
-                f"https://127.0.0.1:{port}/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary",
-                data=b"{}",
-                headers={
-                    "X-Codeium-Csrf-Token": csrf_token,
-                    "Content-Type": "application/json"
-                },
-                method="POST"
-            )
-            with urllib.request.urlopen(req_quota, context=self._ssl_ctx, timeout=2.0) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                result["groups"] = data.get("response", {}).get("groups", [])
-        except Exception as e:
-            result["quota_error"] = str(e)
+        quota_data = self._post_rpc(
+            f"https://127.0.0.1:{port}/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary",
+            csrf_token,
+            timeout=2.0
+        )
+        if quota_data:
+            result["groups"] = quota_data.get("response", {}).get("groups", [])
+        else:
+            result["quota_error"] = "Failed to query RetrieveUserQuotaSummary"
 
         # 2. Call GetUserStatus for User Tier
-        try:
-            req_status = urllib.request.Request(
-                f"https://127.0.0.1:{port}/exa.language_server_pb.LanguageServerService/GetUserStatus",
-                data=b"{}",
-                headers={
-                    "X-Codeium-Csrf-Token": csrf_token,
-                    "Content-Type": "application/json"
-                },
-                method="POST"
-            )
-            with urllib.request.urlopen(req_status, context=self._ssl_ctx, timeout=2.0) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                tier_info = data.get("userTier", {})
-                result["user_tier"] = tier_info.get("name", "Google AI Pro")
-        except Exception:
-            pass
+        status_data = self._post_rpc(
+            f"https://127.0.0.1:{port}/exa.language_server_pb.LanguageServerService/GetUserStatus",
+            csrf_token,
+            timeout=2.0
+        )
+        if status_data:
+            tier_info = status_data.get("userTier", {})
+            result["user_tier"] = tier_info.get("name", "Google AI Pro")
 
         return result

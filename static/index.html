@@ -485,6 +485,7 @@
         <div class="card-val" id="valTotalTokens">--</div>
         <div class="card-sub">
           <span>今日: <strong id="valTodayTokens">--</strong></span>
+          <span style="margin-left: 8px;">近7天: <strong id="val7dTokens">--</strong></span>
         </div>
       </div>
 
@@ -510,9 +511,24 @@
         <div class="card-label">折算总成本 (Estimated Cost)</div>
         <div class="card-val" style="color: #38bdf8;" id="valTotalCost">--</div>
         <div class="card-sub">
-          <span>今日预估: <strong id="valTodayCost">--</strong></span>
+          <span>今日: <strong id="valTodayCost">--</strong></span>
+          <span style="margin-left: 8px;">近7天: <strong id="val7dCost">--</strong></span>
         </div>
       </div>
+    </div>
+
+    <!-- 7-Day SVG Trend Chart Section -->
+    <div class="card" style="margin-bottom: 24px; padding: 20px;">
+      <div class="section-title" style="margin-bottom: 8px;">
+        <span>近 7 天 Token 消耗时序趋势 (7-Day Token Velocity)</span>
+        <div style="font-size: 11px; display: flex; gap: 12px; align-items: center;">
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #38bdf8; border-radius: 2px;"></span> 缓存命中</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #6366f1; border-radius: 2px;"></span> 新输入</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #10b981; border-radius: 2px;"></span> 正文输出</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #a855f7; border-radius: 2px;"></span> 深度思考</span>
+        </div>
+      </div>
+      <div id="trendChartSvgContainer" style="width: 100%; height: 160px; margin-top: 12px;"></div>
     </div>
 
     <!-- Official Quota Cards (from LS RPC) -->
@@ -633,10 +649,12 @@
     function renderUI(data) {
       const sum = data.summary || {};
       const today = data.today || {};
+      const last7d = data.last_7d || {};
 
       // 1. Bento Metrics
       document.getElementById('valTotalTokens').innerText = formatCompact(sum.total_tokens);
       document.getElementById('valTodayTokens').innerText = formatCompact(today.total_tokens);
+      document.getElementById('val7dTokens').innerText = formatCompact(last7d.total_tokens);
 
       document.getElementById('valCachedTokens').innerText = formatCompact(sum.cached_tokens);
       const cachePercent = sum.total_tokens ? ((sum.cached_tokens / sum.total_tokens) * 100).toFixed(1) : 0;
@@ -649,22 +667,120 @@
 
       document.getElementById('valTotalCost').innerText = formatCurrency(sum.cost_usd, sum.cost_cny);
       document.getElementById('valTodayCost').innerText = formatCurrency(today.cost_usd, today.cost_cny);
+      document.getElementById('val7dCost').innerText = formatCurrency(last7d.cost_usd, last7d.cost_cny);
 
-      // 2. Quota Cards
+      // 2. Trend SVG Chart
+      renderTrendChart(data.daily_timeline || []);
+
+      // 3. Quota Cards
       renderQuota(data.quota);
 
-      // 3. Conversations Table
+      // 4. Conversations Table
       renderConversations(data.conversations || []);
 
-      // 4. Model Breakdown
+      // 5. Model Breakdown
       renderModels(data.models || {});
 
-      // 5. If current conversation selected, update details
+      // 6. If current conversation selected, update details
       if (selectedConversationId) {
         loadConversationSteps(selectedConversationId);
       } else if (data.conversations && data.conversations.length > 0) {
         loadConversationSteps(data.conversations[0].conversation_id);
       }
+    }
+
+    function renderTrendChart(timeline) {
+      const container = document.getElementById('trendChartSvgContainer');
+      if (!timeline || !timeline.length) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">暂无历史时序数据</div>';
+        return;
+      }
+
+      const maxVal = Math.max(...timeline.map(d => (d.prompt + d.cached + d.output)), 1);
+      const width = 800;
+      const height = 140;
+      const padding = 28;
+      const barWidth = 32;
+      const gap = (width - padding * 2) / timeline.length;
+
+      let svg = `<svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: 100%; overflow: visible;">`;
+
+      timeline.forEach((d, i) => {
+        const x = padding + i * gap + (gap - barWidth) / 2;
+        const total = d.prompt + d.cached + d.output;
+        const hTotal = (total / maxVal) * (height - 35);
+
+        const hCached = ((d.cached || 0) / maxVal) * (height - 35);
+        const hPrompt = ((d.prompt || 0) / maxVal) * (height - 35);
+        const hOutput = (((d.output || 0) - (d.thinking || 0)) / maxVal) * (height - 35);
+        const hThinking = ((d.thinking || 0) / maxVal) * (height - 35);
+
+        let yCurrent = height - 20;
+
+        // Cached
+        yCurrent -= hCached;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hCached}" fill="#38bdf8" rx="2"><title>${d.day} 缓存: ${formatNumber(d.cached)}</title></rect>`;
+
+        // Prompt
+        yCurrent -= hPrompt;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hPrompt}" fill="#6366f1"><title>${d.day} 输入: ${formatNumber(d.prompt)}</title></rect>`;
+
+        // Output
+        yCurrent -= hOutput;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hOutput}" fill="#10b981"><title>${d.day} 输出: ${formatNumber(d.output)}</title></rect>`;
+
+        // Thinking
+        yCurrent -= hThinking;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hThinking}" fill="#a855f7"><title>${d.day} 思考: ${formatNumber(d.thinking)}</title></rect>`;
+
+        // Day label
+        svg += `<text x="${x + barWidth / 2}" y="${height - 4}" fill="#64748b" font-size="11" text-anchor="middle">${d.day}</text>`;
+
+        // Top value text
+        if (total > 0) {
+          svg += `<text x="${x + barWidth / 2}" y="${Math.max(10, yCurrent - 4)}" fill="#94a3b8" font-size="10" text-anchor="middle">${formatCompact(total)}</text>`;
+        }
+      });
+
+      svg += '</svg>';
+      container.innerHTML = svg;
+    }
+
+    function renderConversations(convs) {
+      const tbody = document.getElementById('convTableBody');
+      document.getElementById('convCountText').innerText = `共 ${convs.length} 个会话`;
+      if (!convs.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">暂无会话数据</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = convs.slice(0, 15).map(c => {
+        const isSelected = c.conversation_id === selectedConversationId;
+        const dt = new Date(c.last_modified);
+        let wsName = '';
+        if (c.workspace) {
+          const cleanWs = c.workspace.replace(/^\["file:\/\//, '').replace(/["\]]/g, '');
+          const parts = cleanWs.split('/');
+          wsName = parts[parts.length - 1] || '';
+        }
+
+        return `
+          <tr onclick="loadConversationSteps('${c.conversation_id}')" style="${isSelected ? 'background: #1a2233;' : ''}">
+            <td>
+              <div class="sess-title" title="${c.title}">${c.title}</div>
+              <div class="sess-model">
+                ${c.conversation_id.slice(0, 8)}... (${c.step_count} 步)
+                ${wsName ? `<span class="pill" style="margin-left: 6px; color: #94a3b8;">📁 ${wsName}</span>` : ''}
+              </div>
+            </td>
+            <td><span class="pill">${c.model || 'gemini'}</span></td>
+            <td><strong>${formatCompact(c.totals.total_tokens)}</strong></td>
+            <td><span class="tag-cached">${formatCompact(c.totals.cached_tokens)}</span></td>
+            <td style="color: #38bdf8;">${formatCurrency(c.totals.cost_usd, c.totals.cost_cny)}</td>
+            <td style="color: var(--text-muted); font-size: 11px;">${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function renderQuota(quota) {

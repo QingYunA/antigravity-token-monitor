@@ -17,7 +17,7 @@ class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
 class SSEBroadcaster:
-    def __init__(self, watch_dir: str = "/Users/mac/.gemini/antigravity/conversations"):
+    def __init__(self, watch_dir: str = "~/.gemini/antigravity/conversations"):
         self.watch_dir = os.path.expanduser(watch_dir)
         self.clients: Set[queue.Queue] = set()
         self.lock = threading.Lock()
@@ -91,6 +91,11 @@ class MonitorHandler(SimpleHTTPRequestHandler):
 
         elif path == "/api/summary":
             self._handle_json(telemetry_parser.get_all_metrics())
+            return
+
+        elif path == "/api/conversations":
+            metrics = telemetry_parser.get_all_metrics()
+            self._handle_json({"conversations": metrics.get("conversations", [])})
             return
 
         elif path == "/api/quota":
