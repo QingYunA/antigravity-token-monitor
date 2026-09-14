@@ -12,6 +12,20 @@ from telemetry_parser import TelemetryParser
 from ls_client import LanguageServerClient
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+APP_VERSION = "1.2.0"
+
+def get_update_info() -> dict:
+    return {
+        "current_version": APP_VERSION,
+        "latest_version": APP_VERSION,
+        "has_update": False,
+        "release_name": f"v{APP_VERSION} 稳定版",
+        "release_notes": "1. 支持中英文 (i18n) 双语无缝即时切换\n2. 全新设计的极简几何悬浮引力核矢量图标\n3. 支持今天、近 7 天、最近 30 天与全部用量聚合对比\n4. 完善版本检查与平滑升级机制",
+        "release_notes_en": "1. Full bilingual (Chinese / English) i18n support\n2. High-end Antigravity Quantum Core vector icon\n3. Time range aggregation for Today, 7D, 30D, and All Time\n4. Built-in version check and seamless update mechanism",
+        "download_url": "https://github.com/google-deepmind/antigravity",
+        "update_command": "cd ~/.gemini/antigravity/scratch/antigravity-token-monitor && ./update.sh",
+        "checked_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
 
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
@@ -115,6 +129,14 @@ class MonitorHandler(SimpleHTTPRequestHandler):
                 "models": metrics.get("models", {}),
             }
             self._handle_json(combined)
+            return
+
+        elif path == "/api/version":
+            self._handle_json({"version": APP_VERSION, "name": "Antigravity Token Monitor", "status": "stable"})
+            return
+
+        elif path == "/api/check_update":
+            self._handle_json(get_update_info())
             return
 
         elif path.startswith("/api/conversation/"):

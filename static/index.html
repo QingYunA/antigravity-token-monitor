@@ -34,6 +34,7 @@
       --segmented-active-bg: #ffffff;
       --segmented-active-text: #0f172a;
       --segmented-text: #64748b;
+      --modal-backdrop: rgba(15, 23, 42, 0.5);
     }
 
     [data-theme="dark"] {
@@ -65,6 +66,7 @@
       --segmented-active-bg: #252b3e;
       --segmented-active-text: #ffffff;
       --segmented-text: #8e9bb0;
+      --modal-backdrop: rgba(0, 0, 0, 0.7);
     }
 
     * {
@@ -108,14 +110,15 @@
     }
 
     .logo-badge {
-      width: 42px;
-      height: 42px;
-      background: linear-gradient(135deg, #0284c7, #4f46e5);
-      border-radius: 11px;
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #090e1a, #1e1b4b);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
     }
 
     .title-group h1 {
@@ -134,7 +137,7 @@
     .controls-area {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
@@ -175,12 +178,12 @@
     }
 
     .segment-btn {
-      padding: 6px 14px;
+      padding: 6px 12px;
       border: none;
       background: transparent;
       color: var(--segmented-text);
       cursor: pointer;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 600;
       border-radius: 6px;
       transition: all 0.15s ease;
@@ -196,10 +199,10 @@
       background: var(--card-bg);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 7px 14px;
+      padding: 6px 12px;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 500;
       display: flex;
       align-items: center;
@@ -211,6 +214,25 @@
     .btn-action:hover {
       background: var(--card-hover);
       border-color: var(--border-focus);
+    }
+
+    .update-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: rgba(2, 132, 199, 0.12);
+      border: 1px solid rgba(2, 132, 199, 0.3);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .update-pill:hover {
+      background: rgba(2, 132, 199, 0.2);
     }
 
     /* Range Selector Bar */
@@ -459,7 +481,7 @@
       margin-top: 2px;
     }
 
-    /* Step Timeline Modal / Detail Drawer */
+    /* Step Timeline Detail Drawer */
     .detail-panel {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -530,6 +552,78 @@
       font-size: 13px;
     }
 
+    /* Update Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: var(--modal-backdrop);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-dialog {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 520px;
+      padding: 26px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      transform: scale(0.95);
+      transition: transform 0.2s ease;
+    }
+
+    .modal-backdrop.open .modal-dialog {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      color: var(--text-muted);
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-command-box {
+      background: var(--step-item-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 12px;
+      color: var(--accent);
+      margin: 14px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      word-break: break-all;
+    }
+
     /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
@@ -552,22 +646,42 @@
     <!-- Header -->
     <header>
       <div class="logo-area">
-        <div class="logo-badge">
-          <!-- Vector Inverted Delta Emblem with Floating Core (Antigravity Logo) -->
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M4 6.5h16l-8 14z" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round"/>
-            <circle cx="12" cy="12" r="2.4" fill="#ffffff"/>
+        <div class="logo-badge" title="Antigravity Quantum Core">
+          <!-- Premium Antigravity Quantum Core & Levitation Arc Vector SVG -->
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <defs>
+              <linearGradient id="antigravityGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#38bdf8"/>
+                <stop offset="100%" stop-color="#c084fc"/>
+              </linearGradient>
+            </defs>
+            <!-- Upper Levitation Halo -->
+            <path d="M7 7.5C9 4 15 4 17 7.5" stroke="url(#antigravityGrad)" stroke-width="2.0" stroke-linecap="round"/>
+            <!-- Levitating Quantum Core -->
+            <circle cx="12" cy="11.5" r="3.2" fill="#ffffff"/>
+            <!-- Lower Gravitational Cradle Arc -->
+            <path d="M4 14C5.5 20.5 18.5 20.5 20 14" stroke="url(#antigravityGrad)" stroke-width="2.4" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="title-group">
-          <h1>Antigravity Token Monitor</h1>
-          <p>实时大语言模型 Token 消耗、缓存节省与官方配额监控大盘</p>
+          <h1 id="i18nHeaderTitle">Antigravity Token Monitor</h1>
+          <p id="i18nHeaderSubtitle">实时大语言模型 Token 消耗、缓存节省与官方配额监控大盘</p>
         </div>
       </div>
       <div class="controls-area">
+        <!-- Live Status Tag -->
         <div class="live-tag">
           <span class="pulse-dot"></span>
           <span id="liveStatusText">LIVE (SSE 已连接)</span>
+        </div>
+        <!-- Update Notice Pill (Hidden until update or clicked) -->
+        <button class="update-pill" id="btnUpdateNotice" onclick="openUpdateModal()" style="display:none;">
+          💡 <span id="updatePillText">发现新版本</span>
+        </button>
+        <!-- Language Switcher: ZH / EN -->
+        <div class="segmented-control">
+          <button class="segment-btn active" id="btnLangZH" onclick="setLanguage('zh')">中文</button>
+          <button class="segment-btn" id="btnLangEN" onclick="setLanguage('en')">EN</button>
         </div>
         <!-- Currency Selector -->
         <div class="segmented-control">
@@ -580,10 +694,15 @@
           <svg id="themeIconMoon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           <span id="themeLabelText">浅色模式</span>
         </button>
+        <!-- Check Update Action Button -->
+        <button class="btn-action" onclick="checkUpdateManual()" title="检查更新">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+          <span id="i18nCheckUpdateBtn">检查更新</span>
+        </button>
         <!-- Refresh Button -->
         <button class="btn-action" onclick="fetchData()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-          刷新
+          <span id="i18nRefreshBtn">刷新</span>
         </button>
       </div>
     </header>
@@ -591,7 +710,7 @@
     <!-- Time Range Selector Bar -->
     <div class="range-bar-wrapper">
       <div class="range-bar-left">
-        <span class="range-bar-title">用量与成本概览</span>
+        <span class="range-bar-title" id="i18nRangeTitle">用量与成本概览</span>
         <span class="range-bar-badge" id="activeRangeBadge">当前统计: 近 7 天</span>
       </div>
       <div class="segmented-control" id="rangeControlGroup">
@@ -611,14 +730,14 @@
         </div>
         <div class="card-val" id="valTotalTokens">--</div>
         <div class="card-sub" id="subTotalTokens">
-          <span>输入: <strong id="valPromptTokens">--</strong></span>
-          <span>输出: <strong id="valOutputTokens">--</strong></span>
+          <span><span id="i18nInputLabel">输入</span>: <strong id="valPromptTokens">--</strong></span>
+          <span><span id="i18nOutputLabel">输出</span>: <strong id="valOutputTokens">--</strong></span>
         </div>
       </div>
 
       <div class="card">
         <div class="card-label">
-          <span>上下文缓存命中</span>
+          <span id="i18nCacheLabel">上下文缓存命中</span>
           <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">Cache</span>
         </div>
         <div class="card-val" id="valCachedTokens">--</div>
@@ -630,7 +749,7 @@
 
       <div class="card">
         <div class="card-label">
-          <span>深度思考消耗</span>
+          <span id="i18nThinkingLabel">深度思考消耗</span>
           <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">Thinking</span>
         </div>
         <div class="card-val" id="valThinkingTokens">--</div>
@@ -647,7 +766,7 @@
         </div>
         <div class="card-val" style="color: var(--accent);" id="valTotalCost">--</div>
         <div class="card-sub" id="subTotalCost">
-          <span>平均/1M: <strong id="valAvgCost">--</strong></span>
+          <span><span id="i18nAvgCostLabel">平均/1M</span>: <strong id="valAvgCost">--</strong></span>
           <span id="valTokensComparison" style="color: var(--text-muted);">--</span>
         </div>
       </div>
@@ -658,10 +777,10 @@
       <div class="section-title" style="margin-bottom: 8px;">
         <span id="chartSectionTitle">Token 消耗时序趋势 (近 7 天)</span>
         <div style="font-size: 11.5px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #0284c7; border-radius: 2px;"></span> 缓存命中</span>
-          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #6366f1; border-radius: 2px;"></span> 新输入</span>
-          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #10b981; border-radius: 2px;"></span> 正文输出</span>
-          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #8b5cf6; border-radius: 2px;"></span> 深度思考</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #0284c7; border-radius: 2px;"></span> <span id="legendCached">缓存命中</span></span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #6366f1; border-radius: 2px;"></span> <span id="legendPrompt">新输入</span></span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #10b981; border-radius: 2px;"></span> <span id="legendOutput">正文输出</span></span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #8b5cf6; border-radius: 2px;"></span> <span id="legendThinking">深度思考</span></span>
         </div>
       </div>
       <div id="trendChartSvgContainer" style="width: 100%; height: 160px; margin-top: 14px;"></div>
@@ -669,15 +788,15 @@
 
     <!-- Official Quota Cards (from Language Server RPC) -->
     <div class="section-title">
-      <span>官方实时配额状态 (Language Server Quota)</span>
+      <span id="i18nQuotaSectionTitle">官方实时配额状态 (Language Server Quota)</span>
       <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;" id="quotaLastUpdated">--</span>
     </div>
     <div class="quota-container" id="quotaContainer">
       <div class="quota-card">
         <div class="quota-header">
-          <span class="quota-title">检测中...</span>
+          <span class="quota-title" id="i18nQuotaDetecting">检测中...</span>
         </div>
-        <div style="font-size: 13px; color: var(--text-muted);">正在探测本地 Antigravity Language Server 进程...</div>
+        <div style="font-size: 13px; color: var(--text-muted);" id="i18nQuotaSearching">正在探测本地 Antigravity Language Server 进程...</div>
       </div>
     </div>
 
@@ -686,19 +805,19 @@
       <!-- Left: Recent Conversations Table -->
       <div>
         <div class="section-title">
-          <span>会话历史用量明细 (Sessions Breakdown)</span>
+          <span id="i18nSessTitle">会话历史用量明细 (Sessions Breakdown)</span>
           <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;" id="convCountText">共 -- 个会话</span>
         </div>
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>会话标题</th>
-                <th>主调用模型</th>
-                <th>总 Token</th>
-                <th>缓存命中</th>
-                <th>预估成本</th>
-                <th>更新时间</th>
+                <th id="thSessTitle">会话标题</th>
+                <th id="thSessModel">主调用模型</th>
+                <th id="thSessTotal">总 Token</th>
+                <th id="thSessCached">缓存命中</th>
+                <th id="thSessCost">预估成本</th>
+                <th id="thSessUpdated">更新时间</th>
               </tr>
             </thead>
             <tbody id="convTableBody">
@@ -713,7 +832,7 @@
       <!-- Right: Model Distribution & Selected Session Steps -->
       <div>
         <div class="section-title">
-          <span>模型消耗分布 (By Model)</span>
+          <span id="i18nModelDistTitle">模型消耗分布 (By Model)</span>
         </div>
         <div class="card" style="margin-bottom: 20px;">
           <div class="model-list" id="modelListContainer">
@@ -734,14 +853,221 @@
     </div>
   </div>
 
+  <!-- Update Modal Dialog -->
+  <div class="modal-backdrop" id="updateModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="modalUpdateTitle">Antigravity Monitor 升级与版本更新</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;" id="modalVersionMeta">当前版本: v1.2.0 · 最新版本: v1.2.0</div>
+        </div>
+        <button class="modal-close" onclick="closeUpdateModal()">&times;</button>
+      </div>
+      <div style="font-size: 13px; margin: 12px 0;">
+        <strong id="modalChangelogTitle">更新内容:</strong>
+        <div id="modalReleaseNotes" style="margin-top: 6px; white-space: pre-line; line-height: 1.6; color: var(--text-muted); font-size: 12.5px;">--</div>
+      </div>
+      <div style="font-size: 12px; font-weight: 600; margin-top: 14px;" id="modalUpgradeCmdLabel">一键终端平滑升级指令:</div>
+      <div class="modal-command-box">
+        <code id="modalCmdCode">./update.sh</code>
+        <button class="btn-action" style="padding: 3px 8px; font-size: 11px;" onclick="copyUpgradeCommand()">复制</button>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+        <button class="btn-action" onclick="closeUpdateModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     let currentCurrency = 'USD';
     let currentRange = '7d'; // 'today' | '7d' | '30d' | 'all'
+    let currentLanguage = localStorage.getItem('antigravity_lang') || 'zh';
     let currentTheme = localStorage.getItem('antigravity_theme') || 'light';
     let globalData = null;
     let selectedConversationId = null;
+    let latestUpdateData = null;
 
-    // Apply initial theme
+    // Bilingual dictionary (i18n)
+    const I18N = {
+      zh: {
+        headerTitle: "Antigravity Token Monitor",
+        headerSubtitle: "实时大语言模型 Token 消耗、缓存节省与官方配额监控大盘",
+        liveConnected: "LIVE (SSE 已连接)",
+        liveConnecting: "重连中...",
+        rangeTitle: "用量与成本概览",
+        rangeBadgePrefix: "当前统计: ",
+        rangeToday: "今天 (Today)",
+        range7d: "近 7 天 (7 Days)",
+        range30d: "最近 30 天 (30 Days)",
+        rangeAll: "全部历史 (All Time)",
+        periodToday: "今日",
+        period7d: "近 7 天",
+        period30d: "最近 30 天",
+        periodAll: "全部历史",
+        tokensCardSuffix: "消耗 Token",
+        costCardSuffix: "折算成本",
+        inputLabel: "输入",
+        outputLabel: "输出",
+        cacheLabel: "上下文缓存命中",
+        hitRate: "命中率",
+        savedCostPrefix: "省下 ",
+        thinkingLabel: "深度思考消耗",
+        thinkingPercentPrefix: "占输出 ",
+        avgCostLabel: "平均/1M",
+        chartTitlePrefix: "Token 消耗时序趋势",
+        legendCached: "缓存命中",
+        legendPrompt: "新输入",
+        legendOutput: "正文输出",
+        legendThinking: "深度思考",
+        quotaTitle: "官方实时配额状态 (Language Server Quota)",
+        quotaDetecting: "检测中...",
+        quotaSearching: "正在探测本地 Antigravity Language Server 进程...",
+        quotaOffline: "未连接",
+        quotaUpdatedPrefix: "更新于 ",
+        quotaRemaining: "剩余",
+        quotaResetAt: "重置时间: ",
+        sessTitle: "会话历史用量明细 (Sessions Breakdown)",
+        sessCount: "共 {n} 个会话",
+        thTitle: "会话标题",
+        thModel: "主调用模型",
+        thTotal: "总 Token",
+        thCached: "缓存命中",
+        thCost: "预估成本",
+        thUpdated: "更新时间",
+        modelDistTitle: "模型消耗分布 (By Model)",
+        stepTitleDefault: "步骤脉冲详情 (Step Inspector)",
+        stepSubtitleDefault: "点击左侧任意会话查看单步 Token 与思考链消耗",
+        stepTitlePrefix: "步骤时序: ",
+        stepSubtitlePrefix: "共 {n} 步交互明细",
+        stepNumPrefix: "步骤 #",
+        stepIn: "入",
+        stepCache: "缓",
+        stepThink: "思",
+        stepOut: "出",
+        themeLight: "浅色模式",
+        themeDark: "暗黑模式",
+        checkUpdateBtn: "检查更新",
+        refreshBtn: "刷新",
+        modalTitle: "Antigravity Monitor 升级与版本更新",
+        modalVerCur: "当前版本: ",
+        modalVerLat: " · 最新版本: ",
+        modalNotes: "更新内容:",
+        modalCmd: "一键终端平滑升级指令:"
+      },
+      en: {
+        headerTitle: "Antigravity Token Monitor",
+        headerSubtitle: "Real-time LLM Token Velocity, Cache Savings & Quota Monitor",
+        liveConnected: "LIVE (SSE Connected)",
+        liveConnecting: "Reconnecting...",
+        rangeTitle: "Usage & Spend Overview",
+        rangeBadgePrefix: "Period: ",
+        rangeToday: "Today",
+        range7d: "Last 7 Days",
+        range30d: "Last 30 Days",
+        rangeAll: "All Time",
+        periodToday: "Today",
+        period7d: "Last 7 Days",
+        period30d: "Last 30 Days",
+        periodAll: "All Time",
+        tokensCardSuffix: " Tokens",
+        costCardSuffix: " Est. Cost",
+        inputLabel: "Input",
+        outputLabel: "Output",
+        cacheLabel: "Context Cache Hit",
+        hitRate: "Hit Rate",
+        savedCostPrefix: "Saved ",
+        thinkingLabel: "Thinking Tokens",
+        thinkingPercentPrefix: "of output ",
+        avgCostLabel: "Avg/1M",
+        chartTitlePrefix: "Token Consumption Trend",
+        legendCached: "Cache Hit",
+        legendPrompt: "New Input",
+        legendOutput: "Output",
+        legendThinking: "Thinking",
+        quotaTitle: "Official Quota Status (Language Server Quota)",
+        quotaDetecting: "Detecting...",
+        quotaSearching: "Scanning local Antigravity Language Server process...",
+        quotaOffline: "Disconnected",
+        quotaUpdatedPrefix: "Updated at ",
+        quotaRemaining: "Remaining",
+        quotaResetAt: "Reset at: ",
+        sessTitle: "Session History Breakdown",
+        sessCount: "{n} Sessions",
+        thTitle: "Session Title",
+        thModel: "Primary Model",
+        thTotal: "Total Tokens",
+        thCached: "Cache Hit",
+        thCost: "Est. Cost",
+        thUpdated: "Updated At",
+        modelDistTitle: "Model Distribution",
+        stepTitleDefault: "Step Pulse Inspector",
+        stepSubtitleDefault: "Click any session on the left to inspect step details",
+        stepTitlePrefix: "Step Pulse: ",
+        stepSubtitlePrefix: "{n} interaction steps",
+        stepNumPrefix: "Step #",
+        stepIn: "In",
+        stepCache: "Cache",
+        stepThink: "Think",
+        stepOut: "Out",
+        themeLight: "Light Mode",
+        themeDark: "Dark Mode",
+        checkUpdateBtn: "Check Updates",
+        refreshBtn: "Refresh",
+        modalTitle: "Antigravity Monitor Updates",
+        modalVerCur: "Current: ",
+        modalVerLat: " · Latest: ",
+        modalNotes: "Release Notes:",
+        modalCmd: "One-Click Terminal Upgrade Command:"
+      }
+    };
+
+    function t(key) {
+      const dict = I18N[currentLanguage] || I18N.zh;
+      return dict[key] || key;
+    }
+
+    // Set Language & re-render
+    function setLanguage(lang) {
+      currentLanguage = lang;
+      localStorage.setItem('antigravity_lang', lang);
+      document.getElementById('btnLangZH').classList.toggle('active', lang === 'zh');
+      document.getElementById('btnLangEN').classList.toggle('active', lang === 'en');
+      applyStaticTranslations();
+      if (globalData) renderUI(globalData);
+    }
+
+    function applyStaticTranslations() {
+      document.getElementById('i18nHeaderTitle').innerText = t('headerTitle');
+      document.getElementById('i18nHeaderSubtitle').innerText = t('headerSubtitle');
+      document.getElementById('i18nRangeTitle').innerText = t('rangeTitle');
+      document.getElementById('tabToday').innerText = t('rangeToday');
+      document.getElementById('tab7d').innerText = t('range7d');
+      document.getElementById('tab30d').innerText = t('range30d');
+      document.getElementById('tabAll').innerText = t('rangeAll');
+      document.getElementById('i18nInputLabel').innerText = t('inputLabel');
+      document.getElementById('i18nOutputLabel').innerText = t('outputLabel');
+      document.getElementById('i18nCacheLabel').innerText = t('cacheLabel');
+      document.getElementById('i18nThinkingLabel').innerText = t('thinkingLabel');
+      document.getElementById('i18nAvgCostLabel').innerText = t('avgCostLabel');
+      document.getElementById('legendCached').innerText = t('legendCached');
+      document.getElementById('legendPrompt').innerText = t('legendPrompt');
+      document.getElementById('legendOutput').innerText = t('legendOutput');
+      document.getElementById('legendThinking').innerText = t('legendThinking');
+      document.getElementById('i18nQuotaSectionTitle').innerText = t('quotaTitle');
+      document.getElementById('i18nSessTitle').innerText = t('sessTitle');
+      document.getElementById('thSessTitle').innerText = t('thTitle');
+      document.getElementById('thSessModel').innerText = t('thModel');
+      document.getElementById('thSessTotal').innerText = t('thTotal');
+      document.getElementById('thSessCached').innerText = t('thCached');
+      document.getElementById('thSessCost').innerText = t('thCost');
+      document.getElementById('thSessUpdated').innerText = t('thUpdated');
+      document.getElementById('i18nModelDistTitle').innerText = t('modelDistTitle');
+      document.getElementById('i18nCheckUpdateBtn').innerText = t('checkUpdateBtn');
+      document.getElementById('i18nRefreshBtn').innerText = t('refreshBtn');
+      document.getElementById('themeLabelText').innerText = currentTheme === 'light' ? t('themeLight') : t('themeDark');
+    }
+
+    // Apply theme
     function applyTheme(theme) {
       currentTheme = theme;
       document.documentElement.setAttribute('data-theme', theme);
@@ -750,7 +1076,7 @@
       const isLight = (theme === 'light');
       document.getElementById('themeIconSun').style.display = isLight ? 'inline' : 'none';
       document.getElementById('themeIconMoon').style.display = isLight ? 'none' : 'inline';
-      document.getElementById('themeLabelText').innerText = isLight ? '浅色模式' : '暗黑模式';
+      document.getElementById('themeLabelText').innerText = isLight ? t('themeLight') : t('themeDark');
 
       if (globalData) {
         renderTrendChart(globalData.daily_timeline || []);
@@ -760,8 +1086,6 @@
     function toggleTheme() {
       applyTheme(currentTheme === 'light' ? 'dark' : 'light');
     }
-
-    applyTheme(currentTheme);
 
     function formatNumber(num) {
       if (num === undefined || num === null) return '0';
@@ -793,8 +1117,9 @@
 
     function setTimeRange(range) {
       currentRange = range;
+      const targetId = 'tab' + (range === 'today' ? 'Today' : range === 'all' ? 'All' : range);
       document.querySelectorAll('#rangeControlGroup .segment-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.id === 'tab' + range.charAt(0).toUpperCase() + range.slice(1));
+        btn.classList.toggle('active', btn.id === targetId);
       });
       if (globalData) renderUI(globalData);
     }
@@ -822,32 +1147,32 @@
 
       // Determine active stats based on selected time range
       let activeStats = last7d;
-      let rangeNameZh = '近 7 天';
+      let rangeName = t('period7d');
       let chartDays = 7;
 
       if (currentRange === 'today') {
         activeStats = today;
-        rangeNameZh = '今日';
+        rangeName = t('periodToday');
         chartDays = 7;
       } else if (currentRange === '7d') {
         activeStats = last7d;
-        rangeNameZh = '近 7 天';
+        rangeName = t('period7d');
         chartDays = 7;
       } else if (currentRange === '30d') {
         activeStats = last30d;
-        rangeNameZh = '最近 30 天';
+        rangeName = t('period30d');
         chartDays = 30;
       } else if (currentRange === 'all') {
         activeStats = sum;
-        rangeNameZh = '全部历史';
+        rangeName = t('periodAll');
         chartDays = 30;
       }
 
       // Update Range Badge & Section Titles
-      document.getElementById('activeRangeBadge').innerText = `当前统计: ${rangeNameZh}`;
-      document.getElementById('cardLabelTokens').innerText = `${rangeNameZh}消耗 Token`;
-      document.getElementById('cardLabelCost').innerText = `${rangeNameZh}折算成本`;
-      document.getElementById('chartSectionTitle').innerText = `Token 消耗时序趋势 (${rangeNameZh})`;
+      document.getElementById('activeRangeBadge').innerText = `${t('rangeBadgePrefix')}${rangeName}`;
+      document.getElementById('cardLabelTokens').innerText = `${rangeName} ${t('tokensCardSuffix')}`;
+      document.getElementById('cardLabelCost').innerText = `${rangeName} ${t('costCardSuffix')}`;
+      document.getElementById('chartSectionTitle').innerText = `${t('chartTitlePrefix')} (${rangeName})`;
 
       // 1. Bento Metric 1: Total Tokens
       document.getElementById('valTotalTokens').innerText = formatCompact(activeStats.total_tokens);
@@ -858,14 +1183,14 @@
       document.getElementById('valCachedTokens').innerText = formatCompact(activeStats.cached_tokens);
       const totalTok = activeStats.total_tokens || 0;
       const cachePercent = totalTok > 0 ? ((activeStats.cached_tokens / totalTok) * 100).toFixed(1) : '0.0';
-      document.getElementById('valCacheRate').innerText = `${cachePercent}% 命中率`;
-      document.getElementById('valSavedCost').innerText = `省下 ${formatCurrency(activeStats.saved_usd, activeStats.saved_cny)}`;
+      document.getElementById('valCacheRate').innerText = `${cachePercent}% ${t('hitRate')}`;
+      document.getElementById('valSavedCost').innerText = `${t('savedCostPrefix')}${formatCurrency(activeStats.saved_usd, activeStats.saved_cny)}`;
 
       // 3. Bento Metric 3: Thinking Tokens
       document.getElementById('valThinkingTokens').innerText = formatCompact(activeStats.thinking_tokens);
       const outTok = activeStats.output_tokens || 0;
       const thinkingPercent = outTok > 0 ? ((activeStats.thinking_tokens / outTok) * 100).toFixed(1) : '0.0';
-      document.getElementById('valThinkingRatio').innerText = `占输出 ${thinkingPercent}%`;
+      document.getElementById('valThinkingRatio').innerText = `${t('thinkingPercentPrefix')}${thinkingPercent}%`;
 
       // 4. Bento Metric 4: Estimated Cost
       document.getElementById('valTotalCost').innerText = formatCurrency(activeStats.cost_usd, activeStats.cost_cny);
@@ -876,7 +1201,7 @@
       } else {
         document.getElementById('valAvgCost').innerText = formatCurrency(0, 0);
       }
-      document.getElementById('valTokensComparison').innerText = `共 ${formatCompact(totalTok)} Tokens`;
+      document.getElementById('valTokensComparison').innerText = `${formatCompact(totalTok)} Tokens`;
 
       // 5. Trend SVG Chart (Slice according to time range)
       const fullTimeline = data.daily_timeline || [];
@@ -903,7 +1228,7 @@
     function renderTrendChart(timeline) {
       const container = document.getElementById('trendChartSvgContainer');
       if (!timeline || !timeline.length) {
-        container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; text-align: center; padding-top: 40px;">暂无历史时序数据</div>';
+        container.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; text-align: center; padding-top: 40px;">暂无历史时序数据</div>`;
         return;
       }
 
@@ -934,19 +1259,19 @@
 
         // Cached
         yCurrent -= hCached;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hCached}" fill="#0284c7" rx="2"><title>${d.day} 缓存: ${formatNumber(d.cached)}</title></rect>`;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hCached}" fill="#0284c7" rx="2"><title>${d.day} ${t('legendCached')}: ${formatNumber(d.cached)}</title></rect>`;
 
         // Prompt
         yCurrent -= hPrompt;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hPrompt}" fill="#6366f1" rx="2"><title>${d.day} 输入: ${formatNumber(d.prompt)}</title></rect>`;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hPrompt}" fill="#6366f1" rx="2"><title>${d.day} ${t('legendPrompt')}: ${formatNumber(d.prompt)}</title></rect>`;
 
         // Output
         yCurrent -= hOutput;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hOutput}" fill="#10b981" rx="2"><title>${d.day} 输出: ${formatNumber(d.output)}</title></rect>`;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hOutput}" fill="#10b981" rx="2"><title>${d.day} ${t('legendOutput')}: ${formatNumber(d.output)}</title></rect>`;
 
         // Thinking
         yCurrent -= hThinking;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hThinking}" fill="#8b5cf6" rx="2"><title>${d.day} 思考: ${formatNumber(d.thinking)}</title></rect>`;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hThinking}" fill="#8b5cf6" rx="2"><title>${d.day} ${t('legendThinking')}: ${formatNumber(d.thinking)}</title></rect>`;
 
         // Day label
         if (count <= 14 || i % 3 === 0 || i === count - 1) {
@@ -965,9 +1290,9 @@
 
     function renderConversations(convs) {
       const tbody = document.getElementById('convTableBody');
-      document.getElementById('convCountText').innerText = `共 ${convs.length} 个会话`;
+      document.getElementById('convCountText').innerText = t('sessCount').replace('{n}', convs.length);
       if (!convs.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">暂无会话数据</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">暂无会话数据</td></tr>`;
         return;
       }
 
@@ -1009,14 +1334,14 @@
       if (!quota || quota.status !== 'ok') {
         container.innerHTML = `
           <div class="quota-card">
-            <div class="quota-header"><span class="quota-title">本地 Language Server 状态</span></div>
-            <div style="font-size: 13px; color: #f59e0b;">${quota ? quota.message : '未连接'}</div>
+            <div class="quota-header"><span class="quota-title">${t('quotaTitle')}</span></div>
+            <div style="font-size: 13px; color: #f59e0b;">${quota ? quota.message : t('quotaOffline')}</div>
           </div>
         `;
         return;
       }
 
-      updatedTimeEl.innerText = '更新于 ' + new Date(quota.last_checked).toLocaleTimeString();
+      updatedTimeEl.innerText = t('quotaUpdatedPrefix') + new Date(quota.last_checked).toLocaleTimeString();
       let html = '';
       (quota.groups || []).forEach(group => {
         html += `
@@ -1033,13 +1358,13 @@
                 <div class="quota-bar-wrapper">
                   <div class="quota-bar-meta">
                     <span>${b.displayName} (${b.window})</span>
-                    <strong style="color: ${isWarning ? '#f59e0b' : '#10b981'};">${remaining}% 剩余</strong>
+                    <strong style="color: ${isWarning ? '#f59e0b' : '#10b981'};">${remaining}% ${t('quotaRemaining')}</strong>
                   </div>
                   <div class="quota-bar-bg">
                     <div class="quota-bar-fill ${isWarning ? 'warning' : ''}" style="width: ${remaining}%;"></div>
                   </div>
                   <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                    重置时间: ${resetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${resetDate.toLocaleDateString()})
+                    ${t('quotaResetAt')}${resetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${resetDate.toLocaleDateString()})
                   </div>
                 </div>
               `;
@@ -1054,7 +1379,7 @@
       const container = document.getElementById('modelListContainer');
       const keys = Object.keys(models);
       if (!keys.length) {
-        container.innerHTML = '<div style="color: var(--text-muted); padding: 12px; font-size: 13px;">无模型数据</div>';
+        container.innerHTML = `<div style="color: var(--text-muted); padding: 12px; font-size: 13px;">无模型数据</div>`;
         return;
       }
 
@@ -1079,11 +1404,11 @@
       const res = await fetch(`/api/conversation/${cid}`);
       const data = await res.json();
       const listEl = document.getElementById('stepListContainer');
-      document.getElementById('activeDetailTitle').innerText = `步骤时序: ${cid.slice(0, 8)}...`;
-      document.getElementById('activeDetailSubtitle').innerText = `共 ${data.steps.length} 步交互明细`;
+      document.getElementById('activeDetailTitle').innerText = `${t('stepTitlePrefix')}${cid.slice(0, 8)}...`;
+      document.getElementById('activeDetailSubtitle').innerText = t('stepSubtitlePrefix').replace('{n}', data.steps.length);
 
       if (!data.steps.length) {
-        listEl.innerHTML = '<div style="color: var(--text-muted); padding: 12px; font-size: 13px;">该会话暂无生成步骤</div>';
+        listEl.innerHTML = `<div style="color: var(--text-muted); padding: 12px; font-size: 13px;">该会话暂无生成步骤</div>`;
         return;
       }
 
@@ -1091,18 +1416,76 @@
         return `
           <div class="step-item">
             <div class="step-item-header">
-              <span>步骤 #${s.step_index}</span>
+              <span>${t('stepNumPrefix')}${s.step_index}</span>
               <span style="color: var(--accent); font-weight: 600;">${formatCurrency(s.cost_usd, s.cost_cny)}</span>
             </div>
             <div class="step-pills">
-              <span class="pill">入: ${formatNumber(s.prompt_tokens)}</span>
-              <span class="pill" style="color: var(--accent);">缓: ${formatNumber(s.cached_tokens)}</span>
-              <span class="pill" style="color: var(--purple);">思: ${formatNumber(s.thinking_tokens)}</span>
-              <span class="pill">出: ${formatNumber(s.output_tokens)}</span>
+              <span class="pill">${t('stepIn')}: ${formatNumber(s.prompt_tokens)}</span>
+              <span class="pill" style="color: var(--accent);">${t('stepCache')}: ${formatNumber(s.cached_tokens)}</span>
+              <span class="pill" style="color: var(--purple);">${t('stepThink')}: ${formatNumber(s.thinking_tokens)}</span>
+              <span class="pill">${t('stepOut')}: ${formatNumber(s.output_tokens)}</span>
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    // Check Updates
+    async function checkUpdateManual() {
+      try {
+        const res = await fetch('/api/check_update');
+        const data = await res.json();
+        latestUpdateData = data;
+        openUpdateModal();
+      } catch (err) {
+        alert('检查更新失败，请确认监控服务正在运行。');
+      }
+    }
+
+    function openUpdateModal() {
+      const modal = document.getElementById('updateModal');
+      const d = latestUpdateData || {
+        current_version: "1.2.0",
+        latest_version: "1.2.0",
+        has_update: false,
+        release_notes: "1. 支持中英文双语即时切换\n2. 全新极简悬浮引力核矢量图标\n3. 支持今天、近7天、近30天聚合对比\n4. 完善版本检查与平滑升级机制",
+        release_notes_en: "1. Full bilingual i18n support\n2. Antigravity Quantum Core vector icon\n3. Today, 7D, 30D aggregation\n4. Version check and update mechanism",
+        update_command: "./update.sh"
+      };
+
+      document.getElementById('modalUpdateTitle').innerText = t('modalTitle');
+      document.getElementById('modalVersionMeta').innerText = `${t('modalVerCur')}v${d.current_version}${t('modalVerLat')}v${d.latest_version}`;
+      const notes = (currentLanguage === 'en') ? (d.release_notes_en || d.release_notes) : d.release_notes;
+      document.getElementById('modalReleaseNotes').innerText = notes;
+      document.getElementById('modalCmdCode').innerText = d.update_command || './update.sh';
+      document.getElementById('modalChangelogTitle').innerText = t('modalNotes');
+      document.getElementById('modalUpgradeCmdLabel').innerText = t('modalCmd');
+
+      modal.classList.add('open');
+    }
+
+    function closeUpdateModal() {
+      document.getElementById('updateModal').classList.remove('open');
+    }
+
+    function copyUpgradeCommand() {
+      const cmd = document.getElementById('modalCmdCode').innerText;
+      navigator.clipboard.writeText(cmd).then(() => {
+        alert(currentLanguage === 'en' ? 'Command copied to clipboard!' : '升级指令已复制到剪贴板！可在终端直接粘贴运行。');
+      });
+    }
+
+    // Background check for update on load
+    async function checkUpdateSilently() {
+      try {
+        const res = await fetch('/api/check_update');
+        const data = await res.json();
+        latestUpdateData = data;
+        if (data.has_update) {
+          document.getElementById('btnUpdateNotice').style.display = 'inline-flex';
+          document.getElementById('updatePillText').innerText = `发现新版本 v${data.latest_version}`;
+        }
+      } catch (e) {}
     }
 
     // Connect Server-Sent Events (SSE)
@@ -1113,16 +1496,19 @@
         fetchData();
       };
       evtSource.onerror = function() {
-        document.getElementById('liveStatusText').innerText = '重连中...';
+        document.getElementById('liveStatusText').innerText = t('liveConnecting');
       };
       evtSource.onopen = function() {
-        document.getElementById('liveStatusText').innerText = 'LIVE (SSE 已连接)';
+        document.getElementById('liveStatusText').innerText = t('liveConnected');
       };
     }
 
     // Initialize
+    applyTheme(currentTheme);
+    setLanguage(currentLanguage);
     fetchData();
     setupSSE();
+    checkUpdateSilently();
   </script>
 </body>
 </html>

@@ -27,8 +27,11 @@ clang -O2 \
   main.m \
   -o "$TARGET_BIN"
 
-# Copy Info.plist
+# Copy Info.plist and AppIcon
 cp Info.plist "${CONTENTS_DIR}/"
+if [ -f "AppIcon.icns" ]; then
+    cp AppIcon.icns "${RESOURCES_DIR}/"
+fi
 
 # Set executable permissions
 chmod +x "$TARGET_BIN"

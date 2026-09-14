@@ -4,7 +4,8 @@
 //
 //  Polished native Apple-grade status bar application inspired by CodexBar.
 //  Zero emoji clutter, native custom NSView card, fluid capsule progress bars,
-//  San Francisco typography, dynamic theme adaptation, and low-quota alerts.
+//  San Francisco typography, bilingual (i18n) support, quantum levitation vector logo,
+//  and integrated version update checker.
 //
 
 #import <Cocoa/Cocoa.h>
@@ -17,27 +18,62 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
     DisplayModeIconOnly       = 2  // [Logo]
 };
 
-#pragma mark - Helper Functions
+typedef NS_ENUM(NSInteger, AppLanguage) {
+    AppLanguageZH = 0, // 中文
+    AppLanguageEN = 1  // English
+};
+
+#pragma mark - Localization & Helpers
+
+static AppLanguage CurrentAppLanguage(void) {
+    NSString *lang = [[NSUserDefaults standardUserDefaults] stringForKey:@"appLanguage"];
+    if ([lang isEqualToString:@"en"]) return AppLanguageEN;
+    return AppLanguageZH;
+}
+
+static void ToggleAppLanguage(void) {
+    if (CurrentAppLanguage() == AppLanguageZH) {
+        [[NSUserDefaults standardUserDefaults] setObject:@"en" forKey:@"appLanguage"];
+    } else {
+        [[NSUserDefaults standardUserDefaults] setObject:@"zh" forKey:@"appLanguage"];
+    }
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+static NSString *Loc(NSString *zh, NSString *en) {
+    return (CurrentAppLanguage() == AppLanguageEN) ? en : zh;
+}
 
 static NSImage *CreateAntigravityLogoImage(void) {
     NSSize size = NSMakeSize(16.0, 16.0);
     NSImage *image = [NSImage imageWithSize:size flipped:NO drawingHandler:^BOOL(NSRect dstRect) {
-        // High-end minimalist vector logo: Inverted geometric delta with floating core
         [[NSColor blackColor] setStroke];
         [[NSColor blackColor] setFill];
 
-        NSBezierPath *delta = [NSBezierPath bezierPath];
-        [delta moveToPoint:NSMakePoint(2.0, 12.5)];
-        [delta lineToPoint:NSMakePoint(14.0, 12.5)];
-        [delta lineToPoint:NSMakePoint(8.0, 2.5)];
-        [delta closePath];
-        delta.lineWidth = 1.5;
-        delta.lineJoinStyle = NSLineJoinStyleRound;
-        [delta stroke];
+        // 1. Lower Levitation Cradle (smooth upward parabolic arc)
+        NSBezierPath *cradle = [NSBezierPath bezierPath];
+        [cradle moveToPoint:NSMakePoint(2.2, 6.8)];
+        [cradle curveToPoint:NSMakePoint(13.8, 6.8)
+               controlPoint1:NSMakePoint(3.4, 2.4)
+               controlPoint2:NSMakePoint(12.6, 2.4)];
+        cradle.lineWidth = 1.6;
+        cradle.lineCapStyle = NSLineCapStyleRound;
+        [cradle stroke];
 
-        NSRect coreRect = NSMakeRect(6.5, 7.5, 3.0, 3.0);
+        // 2. Central Floating Quantum Core (luminous solid sphere)
+        NSRect coreRect = NSMakeRect(5.8, 6.8, 4.4, 4.4);
         NSBezierPath *core = [NSBezierPath bezierPathWithOvalInRect:coreRect];
         [core fill];
+
+        // 3. Upper Levitation Halo (delicate curved arc)
+        NSBezierPath *halo = [NSBezierPath bezierPath];
+        [halo moveToPoint:NSMakePoint(4.6, 11.6)];
+        [halo curveToPoint:NSMakePoint(11.4, 11.6)
+             controlPoint1:NSMakePoint(6.0, 14.2)
+             controlPoint2:NSMakePoint(10.0, 14.2)];
+        halo.lineWidth = 1.3;
+        halo.lineCapStyle = NSLineCapStyleRound;
+        [halo stroke];
 
         return YES;
     }];
@@ -55,12 +91,6 @@ static NSString *FormatTokens(long long num) {
     } else {
         return [NSString stringWithFormat:@"%lld", num];
     }
-}
-
-static NSString *FormatNumberWithCommas(long long num) {
-    NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init];
-    formatter.numberStyle = NSNumberFormatterDecimalStyle;
-    return [formatter stringFromNumber:@(num)] ?: [NSString stringWithFormat:@"%lld", num];
 }
 
 static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight weight, NSColor *color) {
@@ -178,7 +208,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         self.barView.tintColor = [NSColor systemRedColor];
     }
 
-    self.leftMetaLabel.stringValue = [NSString stringWithFormat:@"%.1f%% 剩余", fraction * 100.0];
+    self.leftMetaLabel.stringValue = [NSString stringWithFormat:Loc(@"%.1f%% 剩余", @"%.1f%% Left"), fraction * 100.0];
     self.rightMetaLabel.stringValue = resetText ?: @"";
 }
 
@@ -271,7 +301,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         [self addSubview:_tierBadge];
 
         y += 20.0;
-        _statusSubtitleLabel = CreateLabel(@"正在连接本地语言服务...", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _statusSubtitleLabel = CreateLabel(Loc(@"正在连接本地语言服务...", @"Connecting to Language Server..."), 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
         _statusSubtitleLabel.frame = NSMakeRect(paddingX, y, contentW, 14);
         [self addSubview:_statusSubtitleLabel];
 
@@ -281,15 +311,15 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         y += 10.0;
 
         // 2. Metrics Section (5-hour, Weekly, 3P)
-        _gemini5hRow = [[MetricRowView alloc] initWithFrame:NSMakeRect(paddingX, y, contentW, 44) title:@"Gemini 5 小时限额"];
+        _gemini5hRow = [[MetricRowView alloc] initWithFrame:NSMakeRect(paddingX, y, contentW, 44) title:Loc(@"Gemini 5 小时限额", @"Gemini 5-Hour Limit")];
         [self addSubview:_gemini5hRow];
         y += 48.0;
 
-        _geminiWeeklyRow = [[MetricRowView alloc] initWithFrame:NSMakeRect(paddingX, y, contentW, 44) title:@"Gemini 每周限额"];
+        _geminiWeeklyRow = [[MetricRowView alloc] initWithFrame:NSMakeRect(paddingX, y, contentW, 44) title:Loc(@"Gemini 每周限额", @"Gemini Weekly Limit")];
         [self addSubview:_geminiWeeklyRow];
         y += 48.0;
 
-        _thirdPartyRow = [[MetricRowView alloc] initWithFrame:NSMakeRect(paddingX, y, contentW, 44) title:@"Claude & GPT 额度"];
+        _thirdPartyRow = [[MetricRowView alloc] initWithFrame:NSMakeRect(paddingX, y, contentW, 44) title:Loc(@"Claude & GPT 额度", @"Claude & GPT Quota")];
         [self addSubview:_thirdPartyRow];
         y += 48.0;
 
@@ -298,13 +328,13 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         y += 10.0;
 
         // 3. Usage & Spend Section (Token-first sequence)
-        _usageSectionTitle = CreateLabel(@"用量与活动 (Usage & Activity)", 11.0, NSFontWeightSemibold, [NSColor secondaryLabelColor]);
+        _usageSectionTitle = CreateLabel(Loc(@"用量与活动 (Usage & Activity)", @"Usage & Activity"), 11.0, NSFontWeightSemibold, [NSColor secondaryLabelColor]);
         _usageSectionTitle.frame = NSMakeRect(paddingX, y, contentW, 14);
         [self addSubview:_usageSectionTitle];
         y += 18.0;
 
         // Row 1: Last 7 Days Token Usage
-        _weekUsageLeftLabel = CreateLabel(@"近 7 天 Token 消耗", 11.5, NSFontWeightRegular, [NSColor labelColor]);
+        _weekUsageLeftLabel = CreateLabel(Loc(@"近 7 天 Token 消耗", @"Last 7 Days Tokens"), 11.5, NSFontWeightRegular, [NSColor labelColor]);
         _weekUsageLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 15);
         [self addSubview:_weekUsageLeftLabel];
 
@@ -315,7 +345,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         y += 18.0;
 
         // Row 2: Cache Hit Rate & Savings
-        _cacheLeftLabel = CreateLabel(@"上下文缓存命中率", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _cacheLeftLabel = CreateLabel(Loc(@"上下文缓存命中率", @"Context Cache Rate"), 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
         _cacheLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 14);
         [self addSubview:_cacheLeftLabel];
 
@@ -326,7 +356,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         y += 17.0;
 
         // Row 3: Today's Token Usage
-        _todayUsageLeftLabel = CreateLabel(@"今日 Token 消耗", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _todayUsageLeftLabel = CreateLabel(Loc(@"今日 Token 消耗", @"Today's Tokens"), 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
         _todayUsageLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 14);
         [self addSubview:_todayUsageLeftLabel];
 
@@ -336,6 +366,17 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         [self addSubview:_todayUsageRightLabel];
     }
     return self;
+}
+
+- (void)applyLocalization {
+    _gemini5hRow.titleLabel.stringValue = Loc(@"Gemini 5 小时限额", @"Gemini 5-Hour Limit");
+    _geminiWeeklyRow.titleLabel.stringValue = Loc(@"Gemini 每周限额", @"Gemini Weekly Limit");
+    _thirdPartyRow.titleLabel.stringValue = Loc(@"Claude & GPT 额度", @"Claude & GPT Quota");
+    _usageSectionTitle.stringValue = Loc(@"用量与活动 (Usage & Activity)", @"Usage & Activity");
+    _weekUsageLeftLabel.stringValue = Loc(@"近 7 天 Token 消耗", @"Last 7 Days Tokens");
+    _cacheLeftLabel.stringValue = Loc(@"上下文缓存命中率", @"Context Cache Rate");
+    _todayUsageLeftLabel.stringValue = Loc(@"今日 Token 消耗", @"Today's Tokens");
+    [self setNeedsDisplay:YES];
 }
 
 - (void)addDividerAtY:(CGFloat)y width:(CGFloat)width paddingX:(CGFloat)paddingX {
@@ -350,18 +391,18 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
     if (!date) return @"";
 
     NSTimeInterval diff = [date timeIntervalSinceDate:[NSDate date]];
-    if (diff <= 0) return @"已重置";
+    if (diff <= 0) return Loc(@"已重置", @"Reset");
 
     int hours = (int)(diff / 3600);
     int minutes = (int)(((long)diff % 3600) / 60);
     int days = hours / 24;
 
     if (days > 0) {
-        return [NSString stringWithFormat:@"%dd %dh 后重置", days, hours % 24];
+        return [NSString stringWithFormat:Loc(@"%dd %dh 后重置", @"%dd %dh left"), days, hours % 24];
     } else if (hours > 0) {
-        return [NSString stringWithFormat:@"%dh %dm 后重置", hours, minutes];
+        return [NSString stringWithFormat:Loc(@"%dh %dm 后重置", @"%dh %dm left"), hours, minutes];
     } else {
-        return [NSString stringWithFormat:@"%dm 后重置", minutes];
+        return [NSString stringWithFormat:Loc(@"%dm 后重置", @"%dm left"), minutes];
     }
 }
 
@@ -373,10 +414,10 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
     NSNumber *pidNum = quota[@"pid"];
 
     if (isLSConnected) {
-        self.statusSubtitleLabel.stringValue = [NSString stringWithFormat:@"Language Server 运行中 · PID %@", pidNum ?: @"-"];
+        self.statusSubtitleLabel.stringValue = [NSString stringWithFormat:Loc(@"Language Server 运行中 · PID %@", @"Language Server Active · PID %@"), pidNum ?: @"-"];
         self.statusSubtitleLabel.textColor = [NSColor secondaryLabelColor];
     } else {
-        self.statusSubtitleLabel.stringValue = @"Language Server 离线 (未检测到进程)";
+        self.statusSubtitleLabel.stringValue = Loc(@"Language Server 离线 (未检测到进程)", @"Language Server Offline (Process not found)");
         self.statusSubtitleLabel.textColor = [NSColor systemOrangeColor];
     }
 
@@ -422,8 +463,6 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
 
     if (summary) {
         long long total = [summary[@"total_tokens"] longLongValue];
-        long long prompt = [summary[@"prompt_tokens"] longLongValue];
-        long long output = [summary[@"output_tokens"] longLongValue];
         long long cached = [summary[@"cached_tokens"] longLongValue];
         double savedUsd = [summary[@"saved_usd"] doubleValue];
 
@@ -439,7 +478,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         self.weekUsageRightLabel.stringValue = [NSString stringWithFormat:@"%@ ($%.2f)", FormatTokens(weekTokens), weekCost];
 
         // Row 2: Cache Hit Rate & Savings
-        self.cacheRightLabel.stringValue = [NSString stringWithFormat:@"%.1f%% (省下 $%.2f)", cacheRate, savedUsd];
+        self.cacheRightLabel.stringValue = [NSString stringWithFormat:Loc(@"%.1f%% (省下 $%.2f)", @"%.1f%% (Saved $%.2f)"), cacheRate, savedUsd];
 
         // Row 3: Today's Token Usage
         long long todayTokens = [today[@"total_tokens"] longLongValue];
@@ -449,7 +488,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
 }
 
 - (void)updateOffline {
-    self.statusSubtitleLabel.stringValue = @"本地监控服务离线 (正在自动重连...)";
+    self.statusSubtitleLabel.stringValue = Loc(@"本地监控服务离线 (正在自动重连...)", @"Local Monitor Service Offline (Reconnecting...)");
     self.statusSubtitleLabel.textColor = [NSColor systemRedColor];
 }
 
@@ -538,7 +577,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
 
 - (void)handleFetchError:(NSError *)error {
     if (!self.latestStats) {
-        self.statusItem.button.title = @" 离线";
+        self.statusItem.button.title = Loc(@" 离线", @" Offline");
         [self.cardView updateOffline];
     }
 
@@ -621,8 +660,8 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         if (self.lastObservedTokens > 0 && totalTokens > self.lastObservedTokens) {
             if (!self.notifiedLowQuota) {
                 self.notifiedLowQuota = YES;
-                [self sendNotificationWithTitle:@"Antigravity 额度预警"
-                                        message:[NSString stringWithFormat:@"Gemini 5小时额度仅剩 %.1f%%，建议放缓调用或切换模型。", gemini5hFraction * 100.0]];
+                [self sendNotificationWithTitle:Loc(@"Antigravity 额度预警", @"Antigravity Quota Alert")
+                                        message:[NSString stringWithFormat:Loc(@"Gemini 5小时额度仅剩 %.1f%%，建议放缓调用或切换模型。", @"Gemini 5-hour quota is down to %.1f%%. Consider slowing down or switching models."), gemini5hFraction * 100.0]];
             }
         }
     } else if (gemini5hFraction > 0.25) {
@@ -660,32 +699,48 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
 
     [menu addItem:[NSMenuItem separatorItem]];
 
-    // 2. Clean, unpolluted Apple-standard Action Items (No tacky emoji prefixes)
-    NSMenuItem *webItem = [[NSMenuItem alloc] initWithTitle:@"打开 Web 完整仪表盘..."
+    // 2. Action Items
+    NSMenuItem *webItem = [[NSMenuItem alloc] initWithTitle:Loc(@"打开 Web 完整仪表盘...", @"Open Web Dashboard...")
                                                      action:@selector(openDashboard:)
                                               keyEquivalent:@"o"];
     webItem.target = self;
     [menu addItem:webItem];
 
-    NSMenuItem *refreshItem = [[NSMenuItem alloc] initWithTitle:@"立即刷新数据"
+    NSMenuItem *refreshItem = [[NSMenuItem alloc] initWithTitle:Loc(@"立即刷新数据", @"Refresh Stats Now")
                                                          action:@selector(refreshClicked:)
                                                   keyEquivalent:@"r"];
     refreshItem.target = self;
     [menu addItem:refreshItem];
 
-    NSArray *modeNames = @[@"配额 + Token", @"仅配额", @"仅图标"];
-    NSString *currentMode = modeNames[self.displayMode % modeNames.count];
-    NSString *modeTitle = [NSString stringWithFormat:@"切换顶栏格式 (%@)", currentMode];
+    NSArray *modeNamesZh = @[@"配额 + Token", @"仅配额", @"仅图标"];
+    NSArray *modeNamesEn = @[@"Quota + Tokens", @"Quota Only", @"Icon Only"];
+    NSString *currentMode = (CurrentAppLanguage() == AppLanguageEN) ? modeNamesEn[self.displayMode % 3] : modeNamesZh[self.displayMode % 3];
+    NSString *modeTitle = [NSString stringWithFormat:Loc(@"切换顶栏格式 (%@)", @"Display Mode (%@)"), currentMode];
     NSMenuItem *modeItem = [[NSMenuItem alloc] initWithTitle:modeTitle
                                                       action:@selector(toggleDisplayMode:)
                                                keyEquivalent:@""];
     modeItem.target = self;
     [menu addItem:modeItem];
 
+    // Language toggle item
+    NSString *langTitle = Loc(@"切换语言 (中文 ➔ English)", @"Switch Language (English ➔ 中文)");
+    NSMenuItem *langItem = [[NSMenuItem alloc] initWithTitle:langTitle
+                                                      action:@selector(toggleLanguage:)
+                                               keyEquivalent:@"l"];
+    langItem.target = self;
+    [menu addItem:langItem];
+
+    // Check updates item
+    NSMenuItem *updateItem = [[NSMenuItem alloc] initWithTitle:Loc(@"检查更新...", @"Check for Updates...")
+                                                        action:@selector(checkForUpdates:)
+                                                 keyEquivalent:@"u"];
+    updateItem.target = self;
+    [menu addItem:updateItem];
+
     [menu addItem:[NSMenuItem separatorItem]];
 
     // 3. Quit
-    NSMenuItem *quitItem = [[NSMenuItem alloc] initWithTitle:@"退出 Antigravity Monitor"
+    NSMenuItem *quitItem = [[NSMenuItem alloc] initWithTitle:Loc(@"退出 Antigravity Monitor", @"Quit Antigravity Monitor")
                                                       action:@selector(quitApp:)
                                                keyEquivalent:@"q"];
     quitItem.target = self;
@@ -709,6 +764,82 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
     [self buildMenu];
     if (self.latestStats) {
         [self updateUIWithStats:self.latestStats];
+    }
+}
+
+- (void)toggleLanguage:(id)sender {
+    ToggleAppLanguage();
+    [self.cardView applyLocalization];
+    [self buildMenu];
+    if (self.latestStats) {
+        [self updateUIWithStats:self.latestStats];
+    }
+}
+
+- (void)checkForUpdates:(id)sender {
+    NSURL *url = [NSURL URLWithString:@"http://127.0.0.1:8765/api/check_update"];
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration ephemeralSessionConfiguration];
+    config.timeoutIntervalForRequest = 4.0;
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:config];
+
+    __weak typeof(self) weakSelf = self;
+    NSURLSessionDataTask *task = [session dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            typeof(self) strongSelf = weakSelf;
+            if (!strongSelf) return;
+
+            if (error || !data) {
+                NSAlert *alert = [[NSAlert alloc] init];
+                alert.messageText = Loc(@"检查更新失败", @"Update Check Failed");
+                alert.informativeText = Loc(@"未能连接到本地更新服务，请确认监控服务正在运行。", @"Could not connect to update service. Please ensure the monitor service is active.");
+                [alert addButtonWithTitle:Loc(@"确定", @"OK")];
+                [alert runModal];
+                return;
+            }
+
+            NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+            BOOL hasUpdate = [json[@"has_update"] boolValue];
+            NSString *curVer = json[@"current_version"] ?: @"1.2.0";
+            NSString *latVer = json[@"latest_version"] ?: curVer;
+            NSString *notes = (CurrentAppLanguage() == AppLanguageEN) ? (json[@"release_notes_en"] ?: json[@"release_notes"]) : json[@"release_notes"];
+
+            NSAlert *alert = [[NSAlert alloc] init];
+            if (hasUpdate) {
+                alert.messageText = Loc([NSString stringWithFormat:@"发现新版本 %@", latVer], [NSString stringWithFormat:@"New Version %@ Available", latVer]);
+                alert.informativeText = Loc([NSString stringWithFormat:@"当前版本: %@\n\n更新说明:\n%@\n\n是否立即更新并重启应用？", curVer, notes ?: @""], [NSString stringWithFormat:@"Current version: %@\n\nRelease notes:\n%@\n\nUpdate and restart now?", curVer, notes ?: @""]);
+                [alert addButtonWithTitle:Loc(@"立即更新", @"Update Now")];
+                [alert addButtonWithTitle:Loc(@"稍后提醒", @"Later")];
+                NSModalResponse res = [alert runModal];
+                if (res == NSAlertFirstButtonReturn) {
+                    [strongSelf performAutoUpdate];
+                }
+            } else {
+                alert.messageText = Loc(@"已是最新版本", @"You're Up to Date");
+                alert.informativeText = Loc([NSString stringWithFormat:@"当前版本 v%@ 为最新版本，包含最新特性与性能优化。", curVer], [NSString stringWithFormat:@"Current version v%@ is the latest release with all the newest features.", curVer]);
+                [alert addButtonWithTitle:Loc(@"确定", @"OK")];
+                [alert runModal];
+            }
+        });
+    }];
+    [task resume];
+}
+
+- (void)performAutoUpdate {
+    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+    NSString *projectDir = [bundlePath stringByDeletingLastPathComponent];
+    NSString *rootScript = [[projectDir stringByAppendingPathComponent:@"../update.sh"] stringByStandardizingPath];
+
+    if (![[NSFileManager defaultManager] fileExistsAtPath:rootScript]) {
+        rootScript = [@"~/.gemini/antigravity/scratch/antigravity-token-monitor/update.sh" stringByExpandingTildeInPath];
+    }
+
+    if ([[NSFileManager defaultManager] fileExistsAtPath:rootScript]) {
+        NSTask *task = [[NSTask alloc] init];
+        task.launchPath = @"/bin/bash";
+        task.arguments = @[rootScript];
+        @try {
+            [task launch];
+        } @catch (NSException *e) {}
     }
 }
 
