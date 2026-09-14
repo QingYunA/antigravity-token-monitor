@@ -11,6 +11,7 @@
   <a href="https://github.com/QingYunA/antigravity-token-monitor/releases"><img src="https://img.shields.io/github/v/release/QingYunA/antigravity-token-monitor?style=flat&color=38bdf8" alt="Release"></a>
   <img src="https://img.shields.io/badge/platform-macOS%20(Universal)%20%7C%20Web-lightgrey" alt="Platforms">
   <img src="https://img.shields.io/badge/dependencies-0%20pip%20%7C%200%20npm-emerald" alt="Zero Dependencies">
+  <a href="https://linux.do"><img src="https://img.shields.io/badge/LINUX%20DO-社区讨论-orange" alt="LINUX DO 社区"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
 </p>
 
@@ -18,6 +19,7 @@
   <a href="#核心功能">核心功能</a> ·
   <a href="#快速上手">快速上手</a> ·
   <a href="#数据采集原理">数据原理</a> ·
+  <a href="#社区与交流">社区与交流</a> ·
   <a href="#一键更新">升级更新</a> ·
   <a href="./README_EN.md">English Documentation</a>
 </p>
@@ -168,6 +170,13 @@ python3 run_tests.py
 # 或使用标准命令
 python3 -m unittest discover -s . -p "test_*.py"
 ```
+
+---
+
+## 社区与交流
+
+- **LINUX DO 社区**：欢迎前往 [LINUX DO 讨论贴](https://linux.do) 与各位佬友交流讨论、反馈日常使用体验。
+- **问题与建议**：遇到 Bug 或有新功能想法，欢迎随时提交 [GitHub Issue](https://github.com/QingYunA/antigravity-token-monitor/issues) 或发起 PR。
 
 ---
 

@@ -11,6 +11,7 @@ Includes a native macOS menu bar app, responsive Web dashboard, and terminal CLI
   <a href="https://github.com/QingYunA/antigravity-token-monitor/releases"><img src="https://img.shields.io/github/v/release/QingYunA/antigravity-token-monitor?style=flat&color=38bdf8" alt="Release"></a>
   <img src="https://img.shields.io/badge/platform-macOS%20(Universal)%20%7C%20Web-lightgrey" alt="Platforms">
   <img src="https://img.shields.io/badge/dependencies-0%20pip%20%7C%200%20npm-emerald" alt="Zero Dependencies">
+  <a href="https://linux.do"><img src="https://img.shields.io/badge/LINUX%20DO-Community-orange" alt="LINUX DO Community"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
 </p>
 
@@ -18,6 +19,7 @@ Includes a native macOS menu bar app, responsive Web dashboard, and terminal CLI
   <a href="#features">Features</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#how-it-works">How It Works</a> ·
+  <a href="#community--feedback">Community</a> ·
   <a href="#updates">Updates</a> ·
   <a href="./README.md">简体中文文档</a>
 </p>
@@ -168,6 +170,13 @@ python3 run_tests.py
 # Or using standard unittest discovery
 python3 -m unittest discover -s . -p "test_*.py"
 ```
+
+---
+
+## Community & Feedback
+
+- **LINUX DO Forum**: Join the discussion with fellow builders on the [LINUX DO Community Thread](https://linux.do).
+- **GitHub Issues**: Found a bug or have a feature suggestion? Open an [Issue](https://github.com/QingYunA/antigravity-token-monitor/issues) or submit a pull request.
 
 ---
 
