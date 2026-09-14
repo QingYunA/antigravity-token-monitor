@@ -1,10 +1,10 @@
 # Antigravity Token Monitor - Agent Guidelines
 
-轻量级本地大语言模型 Token 消耗与官方配额监控大盘。
+轻量级本地大语言模型 Token 消耗与官方配额监控面板。
 
 ## 常用指令与自动化检查
 
-- **启动服务**: `python3 server.py --port 8765` (大盘地址: `http://127.0.0.1:8765`)
+- **启动服务**: `python3 server.py --port 8765` (Web 地址: `http://127.0.0.1:8765`)
 - **运行全量测试**: `python3 run_tests.py` 或 `python3 -m unittest discover -s . -p "test_*.py"`
 - **macOS DMG 打包**: `./macos/build.sh dmg` (在仓库根目录生成 `Antigravity-Monitor-macOS-Universal.dmg`)
 - **前端语法校验**: `node -e "const html = fs.readFileSync('static/index.html', 'utf8'); [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].forEach(m => new Function(m[1]));"`
@@ -14,7 +14,7 @@
 - `server.py`: Python 标准库 HTTP 服务（无额外重型框架依赖），负责 API 路由、SSE 推送、汇率换算与静态文件托管。
 - `ls_client.py`: 本地 Antigravity Language Server 进程探测与实时配额 RPC 客户端。
 - `telemetry_parser.py`: 检索与解析 Antigravity 状态数据库、会话历史与 Token 消耗流水。
-- `static/index.html`: 单文件现代化监控大盘（纯原生 HTML/CSS/SVG，零外部 CDN 依赖，支持明暗主题与中英双语）。
+- `static/index.html`: 单文件现代化 Web 监控页面（纯原生 HTML/CSS/SVG，零外部 CDN 依赖，支持明暗主题与中英双语）。
 - `macos/build.sh`: macOS 应用打包脚本，支持独立 `.app` 与原生 `hdiutil` DMG 制作。
 
 ## 前端工程与图表设计规范 (遵循 `/agent-html`)

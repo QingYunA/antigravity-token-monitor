@@ -38,7 +38,7 @@ def main():
     else:
         print(f"  • 状态: {quota.get('message', '未运行')}")
 
-    print("\n💡 提示: 运行 ./start_monitor.command 可打开图形化 Web 大盘实时监控。")
+    print("\n💡 提示: 运行 ./start_monitor.command 可打开图形化 Web 监控页面。")
     print("================================================================")
 
 if __name__ == "__main__":

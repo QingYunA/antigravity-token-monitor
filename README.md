@@ -5,7 +5,7 @@
 # Antigravity Token Monitor
 
 <p><strong>专为 Google DeepMind Antigravity 打造的本地 Token 消耗与官方配额监控工具。</strong><br>
-包含原生 macOS 菜单栏常驻卡片、响应式 Web 大盘与终端 CLI，零外部依赖，零数据外传。</p>
+包含原生 macOS 菜单栏常驻卡片、响应式 Web 面板与终端 CLI，零外部依赖，零数据外传。</p>
 
 <p>
   <a href="https://github.com/QingYunA/antigravity-token-monitor/releases"><img src="https://img.shields.io/github/v/release/QingYunA/antigravity-token-monitor?style=flat&color=38bdf8" alt="Release"></a>
@@ -32,7 +32,7 @@
   <p><em>macOS 菜单栏常驻卡片：随时查看近 7 天与当天用量、缓存命中节省及 5h/周限额倒计时</em></p>
   <br>
   <img src="./assets/web_dashboard.png" width="860" alt="Antigravity Monitor Web Dashboard">
-  <p><em>响应式 Web 监控大盘：原生 SVG 1:1 像素时序走势、按模型消耗分布与单步思考链探查</em></p>
+  <p><em>响应式 Web 监控面板：原生 SVG 1:1 像素时序走势、按模型消耗分布与单步思考链探查</em></p>
 </div>
 
 ---
@@ -92,7 +92,7 @@ cd antigravity-token-monitor
 
 ---
 
-### 方式 3：启动 Web 监控大盘
+### 方式 3：启动 Web 监控面板
 
 需要查看 30 天历史、时序曲线或单步思考链明细时使用：
 
@@ -151,7 +151,7 @@ python3 cli.py
 ## 升级更新
 
 - **菜单栏检查**：在 Mac 状态栏菜单中点击 `检查更新...` 查看最新版本。
-- **Web 大盘提示**：发现新版本时，大盘顶部自动亮起升级提醒。
+- **Web 页面提示**：发现新版本时，页面顶部自动亮起升级提醒。
 - **终端平滑升级**：在项目根目录下执行脚本即可一键拉取最新代码并热重启：
   ```bash
   ./update.sh
