@@ -22,8 +22,8 @@ def get_update_info() -> dict:
         "release_name": f"v{APP_VERSION} 稳定版",
         "release_notes": "1. 支持中英文 (i18n) 双语无缝即时切换\n2. 全新设计的极简几何悬浮引力核矢量图标\n3. 支持今天、近 7 天、最近 30 天与全部用量聚合对比\n4. 完善版本检查与平滑升级机制",
         "release_notes_en": "1. Full bilingual (Chinese / English) i18n support\n2. High-end Antigravity Quantum Core vector icon\n3. Time range aggregation for Today, 7D, 30D, and All Time\n4. Built-in version check and seamless update mechanism",
-        "download_url": "https://github.com/google-deepmind/antigravity",
-        "update_command": "cd ~/.gemini/antigravity/scratch/antigravity-token-monitor && ./update.sh",
+        "download_url": "https://github.com/QingYunA/antigravity-token-monitor",
+        "update_command": f"cd '{os.path.dirname(os.path.abspath(__file__))}' && ./update.sh",
         "checked_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
 

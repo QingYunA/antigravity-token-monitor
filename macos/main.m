@@ -598,6 +598,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
             [parentDir stringByAppendingPathComponent:@"server.py"],
             [parentDir stringByAppendingPathComponent:@"../server.py"],
             [cwd stringByAppendingPathComponent:@"server.py"],
+            [homeDir stringByAppendingPathComponent:@"cyq/Code/开源/antigravity-token-monitor/server.py"],
             [homeDir stringByAppendingPathComponent:@".gemini/antigravity/scratch/antigravity-token-monitor/server.py"]
         ];
 
@@ -829,6 +830,9 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
     NSString *projectDir = [bundlePath stringByDeletingLastPathComponent];
     NSString *rootScript = [[projectDir stringByAppendingPathComponent:@"../update.sh"] stringByStandardizingPath];
 
+    if (![[NSFileManager defaultManager] fileExistsAtPath:rootScript]) {
+        rootScript = [@"~/cyq/Code/开源/antigravity-token-monitor/update.sh" stringByExpandingTildeInPath];
+    }
     if (![[NSFileManager defaultManager] fileExistsAtPath:rootScript]) {
         rootScript = [@"~/.gemini/antigravity/scratch/antigravity-token-monitor/update.sh" stringByExpandingTildeInPath];
     }
