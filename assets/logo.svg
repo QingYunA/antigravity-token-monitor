@@ -1,0 +1,14 @@
+<svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="antigravityGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+  </defs>
+  <!-- Upper Levitation Halo -->
+  <path d="M7 7.5C9 4 15 4 17 7.5" stroke="url(#antigravityGrad)" stroke-width="2.0" stroke-linecap="round"/>
+  <!-- Levitating Quantum Core -->
+  <circle cx="12" cy="11.5" r="3.2" fill="#38bdf8"/>
+  <!-- Lower Gravitational Cradle Arc -->
+  <path d="M4 14C5.5 20.5 18.5 20.5 20 14" stroke="url(#antigravityGrad)" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

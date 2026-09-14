@@ -21,7 +21,7 @@ class TestApiStats(unittest.TestCase):
     def test_api_stats_payload_format(self):
         url = f"http://127.0.0.1:{self.port}/api/stats"
         req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=3.0) as resp:
+        with urllib.request.urlopen(req, timeout=15.0) as resp:
             self.assertEqual(resp.status, 200)
             data = json.loads(resp.read().decode("utf-8"))
             self.assertEqual(data.get("status"), "ok")

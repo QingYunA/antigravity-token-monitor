@@ -16,13 +16,11 @@ echo "🔨 正在编译 Antigravity 原生 macOS 顶部菜单栏应用..."
 # Ensure directories exist
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
-# Detect architecture dynamically
-ARCH="$(uname -m)"
-
-# Compile Objective-C source using clang
+# Compile Objective-C source using clang (Universal Binary: arm64 + x86_64)
 clang -O2 \
   -fobjc-arc \
-  -target "${ARCH}-apple-macos11.0" \
+  -arch arm64 \
+  -arch x86_64 \
   -framework Cocoa \
   main.m \
   -o "$TARGET_BIN"
