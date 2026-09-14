@@ -2,10 +2,14 @@
 //  main.m
 //  Antigravity Monitor (macOS Menu Bar Extra)
 //
-//  Created for Antigravity Token Monitor
+//  Polished native Apple-grade status bar application inspired by CodexBar.
+//  Zero emoji clutter, native custom NSView card, fluid capsule progress bars,
+//  San Francisco typography, dynamic theme adaptation, and low-quota alerts.
 //
 
 #import <Cocoa/Cocoa.h>
+
+#define CARD_WIDTH 310.0
 
 typedef NS_ENUM(NSInteger, DisplayMode) {
     DisplayModeQuotaAndTokens = 0, // ⚡ 65.1% · 9.2M
@@ -13,15 +17,414 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
     DisplayModeIconOnly       = 2  // ⚡
 };
 
+#pragma mark - Helper Functions
+
+static NSString *FormatTokens(long long num) {
+    if (num >= 1000000000LL) {
+        return [NSString stringWithFormat:@"%.2fB", (double)num / 1000000000.0];
+    } else if (num >= 1000000LL) {
+        return [NSString stringWithFormat:@"%.1fM", (double)num / 1000000.0];
+    } else if (num >= 1000LL) {
+        return [NSString stringWithFormat:@"%.1fK", (double)num / 1000.0];
+    } else {
+        return [NSString stringWithFormat:@"%lld", num];
+    }
+}
+
+static NSString *FormatNumberWithCommas(long long num) {
+    NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init];
+    formatter.numberStyle = NSNumberFormatterDecimalStyle;
+    return [formatter stringFromNumber:@(num)] ?: [NSString stringWithFormat:@"%lld", num];
+}
+
+static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight weight, NSColor *color) {
+    NSTextField *label = [NSTextField labelWithString:text ?: @""];
+    label.font = [NSFont systemFontOfSize:fontSize weight:weight];
+    label.textColor = color ?: [NSColor labelColor];
+    label.backgroundColor = [NSColor clearColor];
+    label.bezeled = NO;
+    label.editable = NO;
+    label.selectable = NO;
+    label.lineBreakMode = NSLineBreakByTruncatingTail;
+    return label;
+}
+
+#pragma mark - Custom Progress Bar (MetricBarView)
+
+@interface MetricBarView : NSView
+@property (nonatomic, assign) double fraction;
+@property (nonatomic, strong) NSColor *tintColor;
+@end
+
+@implementation MetricBarView
+
+- (instancetype)initWithFrame:(NSRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        _fraction = 1.0;
+        _tintColor = [NSColor systemGreenColor];
+    }
+    return self;
+}
+
+- (void)drawRect:(NSRect)dirtyRect {
+    [super drawRect:dirtyRect];
+    NSRect bounds = self.bounds;
+    CGFloat radius = bounds.size.height / 2.0;
+
+    // Track background
+    NSBezierPath *trackPath = [NSBezierPath bezierPathWithRoundedRect:bounds xRadius:radius yRadius:radius];
+    [[NSColor colorWithWhite:0.5 alpha:0.18] setFill];
+    [trackPath fill];
+
+    // Progress fill
+    double f = MAX(0.0, MIN(1.0, self.fraction));
+    if (f > 0.0) {
+        CGFloat fillW = MAX(radius * 2.0, bounds.size.width * f);
+        if (fillW > bounds.size.width) fillW = bounds.size.width;
+        NSRect fillRect = NSMakeRect(bounds.origin.x, bounds.origin.y, fillW, bounds.size.height);
+        NSBezierPath *fillPath = [NSBezierPath bezierPathWithRoundedRect:fillRect xRadius:radius yRadius:radius];
+        [(self.tintColor ?: [NSColor systemGreenColor]) setFill];
+        [fillPath fill];
+    }
+}
+
+- (void)setFraction:(double)fraction {
+    _fraction = fraction;
+    [self setNeedsDisplay:YES];
+}
+
+- (void)setTintColor:(NSColor *)tintColor {
+    _tintColor = tintColor;
+    [self setNeedsDisplay:YES];
+}
+
+@end
+
+#pragma mark - Metric Row View (MetricRowView)
+
+@interface MetricRowView : NSView
+@property (nonatomic, strong) NSTextField *titleLabel;
+@property (nonatomic, strong) MetricBarView *barView;
+@property (nonatomic, strong) NSTextField *leftMetaLabel;
+@property (nonatomic, strong) NSTextField *rightMetaLabel;
+@end
+
+@implementation MetricRowView
+
+- (instancetype)initWithFrame:(NSRect)frame title:(NSString *)title {
+    self = [super initWithFrame:frame];
+    if (self) {
+        CGFloat w = frame.size.width;
+        
+        _titleLabel = CreateLabel(title, 12.0, NSFontWeightMedium, [NSColor labelColor]);
+        _titleLabel.frame = NSMakeRect(0, 0, w, 16);
+        [self addSubview:_titleLabel];
+
+        _barView = [[MetricBarView alloc] initWithFrame:NSMakeRect(0, 19, w, 5)];
+        [self addSubview:_barView];
+
+        _leftMetaLabel = CreateLabel(@"--.-% 剩余", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _leftMetaLabel.frame = NSMakeRect(0, 27, w * 0.55, 14);
+        [self addSubview:_leftMetaLabel];
+
+        _rightMetaLabel = CreateLabel(@"", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _rightMetaLabel.alignment = NSTextAlignmentRight;
+        _rightMetaLabel.frame = NSMakeRect(w * 0.45, 27, w * 0.55, 14);
+        [self addSubview:_rightMetaLabel];
+    }
+    return self;
+}
+
+- (BOOL)isFlipped {
+    return YES;
+}
+
+- (void)setRemainingFraction:(double)fraction resetText:(NSString *)resetText {
+    self.barView.fraction = fraction;
+    
+    // Choose color based on remaining fraction
+    if (fraction >= 0.30) {
+        self.barView.tintColor = [NSColor systemGreenColor];
+    } else if (fraction >= 0.15) {
+        self.barView.tintColor = [NSColor systemOrangeColor];
+    } else {
+        self.barView.tintColor = [NSColor systemRedColor];
+    }
+
+    self.leftMetaLabel.stringValue = [NSString stringWithFormat:@"%.1f%% 剩余", fraction * 100.0];
+    self.rightMetaLabel.stringValue = resetText ?: @"";
+}
+
+@end
+
+#pragma mark - Badge View (BadgeView)
+
+@interface BadgeView : NSView
+@property (nonatomic, strong) NSTextField *label;
+@end
+
+@implementation BadgeView
+
+- (instancetype)initWithText:(NSString *)text {
+    self = [super initWithFrame:NSMakeRect(0, 0, 80, 18)];
+    if (self) {
+        _label = CreateLabel(text, 9.5, NSFontWeightSemibold, [NSColor secondaryLabelColor]);
+        _label.alignment = NSTextAlignmentCenter;
+        _label.frame = NSMakeRect(6, 1, 68, 14);
+        [self addSubview:_label];
+    }
+    return self;
+}
+
+- (void)drawRect:(NSRect)dirtyRect {
+    [super drawRect:dirtyRect];
+    NSRect bounds = self.bounds;
+    NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(bounds, 0.5, 0.5) xRadius:4.0 yRadius:4.0];
+    [[NSColor colorWithWhite:0.5 alpha:0.12] setFill];
+    [path fill];
+    [[NSColor colorWithWhite:0.5 alpha:0.25] setStroke];
+    path.lineWidth = 0.8;
+    [path stroke];
+}
+
+- (void)setText:(NSString *)text {
+    self.label.stringValue = text ?: @"";
+    [self.label sizeToFit];
+    CGFloat newW = MAX(56.0, self.label.frame.size.width + 12.0);
+    self.frame = NSMakeRect(self.frame.origin.x, self.frame.origin.y, newW, 18.0);
+    self.label.frame = NSMakeRect(6, 1, newW - 12.0, 14.0);
+    [self setNeedsDisplay:YES];
+}
+
+@end
+
+#pragma mark - Polished Menu Card View (AntigravityCardView)
+
+@interface AntigravityCardView : NSView
+@property (nonatomic, strong) NSTextField *appNameLabel;
+@property (nonatomic, strong) NSTextField *statusSubtitleLabel;
+@property (nonatomic, strong) BadgeView *tierBadge;
+
+@property (nonatomic, strong) MetricRowView *gemini5hRow;
+@property (nonatomic, strong) MetricRowView *geminiWeeklyRow;
+@property (nonatomic, strong) MetricRowView *thirdPartyRow;
+
+@property (nonatomic, strong) NSTextField *usageSectionTitle;
+@property (nonatomic, strong) NSTextField *costLeftLabel;
+@property (nonatomic, strong) NSTextField *costRightLabel;
+@property (nonatomic, strong) NSTextField *cacheLeftLabel;
+@property (nonatomic, strong) NSTextField *cacheRightLabel;
+@property (nonatomic, strong) NSTextField *tokensLeftLabel;
+@property (nonatomic, strong) NSTextField *tokensRightLabel;
+
+@property (nonatomic, strong) NSISO8601DateFormatter *isoFormatter;
+@end
+
+@implementation AntigravityCardView
+
+- (BOOL)isFlipped {
+    return YES;
+}
+
+- (instancetype)initWithFrame:(NSRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        _isoFormatter = [[NSISO8601DateFormatter alloc] init];
+        CGFloat paddingX = 14.0;
+        CGFloat contentW = CARD_WIDTH - (paddingX * 2.0);
+        CGFloat y = 12.0;
+
+        // 1. Header: App title, subtitle, tier badge
+        _appNameLabel = CreateLabel(@"Antigravity", 14.0, NSFontWeightBold, [NSColor labelColor]);
+        _appNameLabel.frame = NSMakeRect(paddingX, y, contentW - 90, 18);
+        [self addSubview:_appNameLabel];
+
+        _tierBadge = [[BadgeView alloc] initWithText:@"Google AI Pro"];
+        _tierBadge.frame = NSMakeRect(CARD_WIDTH - paddingX - 80, y - 1, 80, 18);
+        [self addSubview:_tierBadge];
+
+        y += 20.0;
+        _statusSubtitleLabel = CreateLabel(@"正在连接本地语言服务...", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _statusSubtitleLabel.frame = NSMakeRect(paddingX, y, contentW, 14);
+        [self addSubview:_statusSubtitleLabel];
+
+        y += 20.0;
+        // Divider 1
+        [self addDividerAtY:y width:contentW paddingX:paddingX];
+        y += 10.0;
+
+        // 2. Metrics Section (5-hour, Weekly, 3P)
+        _gemini5hRow = [[MetricRowView alloc] initWithFrame:NSMakeRect(paddingX, y, contentW, 44) title:@"Gemini 5 小时限额"];
+        [self addSubview:_gemini5hRow];
+        y += 48.0;
+
+        _geminiWeeklyRow = [[MetricRowView alloc] initWithFrame:NSMakeRect(paddingX, y, contentW, 44) title:@"Gemini 每周限额"];
+        [self addSubview:_geminiWeeklyRow];
+        y += 48.0;
+
+        _thirdPartyRow = [[MetricRowView alloc] initWithFrame:NSMakeRect(paddingX, y, contentW, 44) title:@"Claude & GPT 额度"];
+        [self addSubview:_thirdPartyRow];
+        y += 48.0;
+
+        // Divider 2
+        [self addDividerAtY:y width:contentW paddingX:paddingX];
+        y += 10.0;
+
+        // 3. Usage & Spend Section
+        _usageSectionTitle = CreateLabel(@"消耗与费用 (Cost & Usage)", 11.0, NSFontWeightSemibold, [NSColor secondaryLabelColor]);
+        _usageSectionTitle.frame = NSMakeRect(paddingX, y, contentW, 14);
+        [self addSubview:_usageSectionTitle];
+        y += 18.0;
+
+        // Row 1: Cost
+        _costLeftLabel = CreateLabel(@"总计预估费用", 11.5, NSFontWeightRegular, [NSColor labelColor]);
+        _costLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 15);
+        [self addSubview:_costLeftLabel];
+
+        _costRightLabel = CreateLabel(@"$0.00", 11.5, NSFontWeightMedium, [NSColor labelColor]);
+        _costRightLabel.alignment = NSTextAlignmentRight;
+        _costRightLabel.frame = NSMakeRect(paddingX + contentW * 0.45, y, contentW * 0.55, 15);
+        [self addSubview:_costRightLabel];
+        y += 18.0;
+
+        // Row 2: Cache
+        _cacheLeftLabel = CreateLabel(@"上下文缓存节省", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _cacheLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 14);
+        [self addSubview:_cacheLeftLabel];
+
+        _cacheRightLabel = CreateLabel(@"0.0% (省下 $0.00)", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _cacheRightLabel.alignment = NSTextAlignmentRight;
+        _cacheRightLabel.frame = NSMakeRect(paddingX + contentW * 0.45, y, contentW * 0.55, 14);
+        [self addSubview:_cacheRightLabel];
+        y += 17.0;
+
+        // Row 3: IO Tokens
+        _tokensLeftLabel = CreateLabel(@"输入 / 输出 Token", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _tokensLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 14);
+        [self addSubview:_tokensLeftLabel];
+
+        _tokensRightLabel = CreateLabel(@"0 / 0", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _tokensRightLabel.alignment = NSTextAlignmentRight;
+        _tokensRightLabel.frame = NSMakeRect(paddingX + contentW * 0.45, y, contentW * 0.55, 14);
+        [self addSubview:_tokensRightLabel];
+    }
+    return self;
+}
+
+- (void)addDividerAtY:(CGFloat)y width:(CGFloat)width paddingX:(CGFloat)paddingX {
+    NSBox *divider = [[NSBox alloc] initWithFrame:NSMakeRect(paddingX, y, width, 1.0)];
+    divider.boxType = NSBoxSeparator;
+    [self addSubview:divider];
+}
+
+- (NSString *)formatResetCountdown:(NSString *)isoString {
+    if (!isoString || [isoString isEqualToString:@""]) return @"";
+    NSDate *date = [self.isoFormatter dateFromString:isoString];
+    if (!date) return @"";
+
+    NSTimeInterval diff = [date timeIntervalSinceDate:[NSDate date]];
+    if (diff <= 0) return @"已重置";
+
+    int hours = (int)(diff / 3600);
+    int minutes = (int)(((long)diff % 3600) / 60);
+    int days = hours / 24;
+
+    if (days > 0) {
+        return [NSString stringWithFormat:@"%dd %dh 后重置", days, hours % 24];
+    } else if (hours > 0) {
+        return [NSString stringWithFormat:@"%dh %dm 后重置", hours, minutes];
+    } else {
+        return [NSString stringWithFormat:@"%dm 后重置", minutes];
+    }
+}
+
+- (void)updateWithStats:(NSDictionary *)stats {
+    NSDictionary *quota = stats[@"quota"];
+    NSDictionary *summary = stats[@"summary"];
+
+    BOOL isLSConnected = (quota != nil && [quota[@"status"] isEqualToString:@"ok"]);
+    NSNumber *pidNum = quota[@"pid"];
+
+    if (isLSConnected) {
+        self.statusSubtitleLabel.stringValue = [NSString stringWithFormat:@"Language Server 运行中 · PID %@", pidNum ?: @"-"];
+        self.statusSubtitleLabel.textColor = [NSColor secondaryLabelColor];
+    } else {
+        self.statusSubtitleLabel.stringValue = @"Language Server 离线 (未检测到进程)";
+        self.statusSubtitleLabel.textColor = [NSColor systemOrangeColor];
+    }
+
+    NSString *userTier = quota[@"user_tier"] ?: @"Google AI Pro";
+    [self.tierBadge setText:userTier];
+
+    // Parse Buckets
+    double gemini5hFraction = 1.0;
+    NSString *gemini5hReset = @"";
+    double geminiWeeklyFraction = 1.0;
+    NSString *geminiWeeklyReset = @"";
+    double thirdPartyFraction = 1.0;
+    NSString *thirdPartyReset = @"";
+
+    if (quota && [quota[@"groups"] isKindOfClass:[NSArray class]]) {
+        for (NSDictionary *g in quota[@"groups"]) {
+            for (NSDictionary *b in g[@"buckets"]) {
+                NSString *bId = b[@"bucketId"] ?: @"";
+                double rem = [b[@"remainingFraction"] doubleValue];
+                NSString *countdown = [self formatResetCountdown:b[@"resetTime"]];
+
+                if ([bId isEqualToString:@"gemini-5h"]) {
+                    gemini5hFraction = rem;
+                    gemini5hReset = countdown;
+                } else if ([bId isEqualToString:@"gemini-weekly"]) {
+                    geminiWeeklyFraction = rem;
+                    geminiWeeklyReset = countdown;
+                } else if ([bId isEqualToString:@"3p-5h"] || [bId isEqualToString:@"3p-weekly"]) {
+                    thirdPartyFraction = rem;
+                    thirdPartyReset = countdown;
+                }
+            }
+        }
+    }
+
+    [self.gemini5hRow setRemainingFraction:gemini5hFraction resetText:gemini5hReset];
+    [self.geminiWeeklyRow setRemainingFraction:geminiWeeklyFraction resetText:geminiWeeklyReset];
+    [self.thirdPartyRow setRemainingFraction:thirdPartyFraction resetText:thirdPartyReset];
+
+    // Usage & Summary
+    if (summary) {
+        long long total = [summary[@"total_tokens"] longLongValue];
+        long long prompt = [summary[@"prompt_tokens"] longLongValue];
+        long long output = [summary[@"output_tokens"] longLongValue];
+        long long cached = [summary[@"cached_tokens"] longLongValue];
+        double costUsd = [summary[@"cost_usd"] doubleValue];
+        double savedUsd = [summary[@"saved_usd"] doubleValue];
+
+        double cacheRate = (total > 0) ? ((double)cached / (double)total) * 100.0 : 0.0;
+
+        self.costRightLabel.stringValue = [NSString stringWithFormat:@"$%.2f (%@ Tokens)", costUsd, FormatTokens(total)];
+        self.cacheRightLabel.stringValue = [NSString stringWithFormat:@"%.1f%% (省下 $%.2f)", cacheRate, savedUsd];
+        self.tokensRightLabel.stringValue = [NSString stringWithFormat:@"%@ / %@", FormatTokens(prompt), FormatTokens(output)];
+    }
+}
+
+- (void)updateOffline {
+    self.statusSubtitleLabel.stringValue = @"本地监控服务离线 (正在自动重连...)";
+    self.statusSubtitleLabel.textColor = [NSColor systemRedColor];
+}
+
+@end
+
+#pragma mark - App Delegate (AppDelegate)
+
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 @property (strong, nonatomic) NSStatusItem *statusItem;
 @property (strong, nonatomic) NSTimer *timer;
 @property (strong, nonatomic) NSDictionary *latestStats;
+@property (strong, nonatomic) AntigravityCardView *cardView;
 @property (assign, nonatomic) DisplayMode displayMode;
 @property (assign, nonatomic) BOOL notifiedLowQuota;
 @property (assign, nonatomic) BOOL serverAutoStartAttempted;
 @property (assign, nonatomic) long long lastObservedTokens;
-@property (strong, nonatomic) NSISO8601DateFormatter *isoFormatter;
 @end
 
 @implementation AppDelegate
@@ -31,10 +434,12 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
     self.notifiedLowQuota = NO;
     self.serverAutoStartAttempted = NO;
     self.lastObservedTokens = 0;
-    self.isoFormatter = [[NSISO8601DateFormatter alloc] init];
 
     // Accessory menu bar extra: no Dock icon, never steal window focus
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+
+    // Card frame: 310 x 284
+    self.cardView = [[AntigravityCardView alloc] initWithFrame:NSMakeRect(0, 0, CARD_WIDTH, 284.0)];
 
     [self setupStatusItem];
     [self fetchStats];
@@ -52,54 +457,7 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     self.statusItem.button.title = @"⚡ --.-%";
     self.statusItem.button.toolTip = @"Antigravity Token Monitor";
-    [self updateMenu];
-}
-
-#pragma mark - Formatting Helpers
-
-- (NSString *)formatTokens:(long long)num {
-    if (num >= 1000000000LL) {
-        return [NSString stringWithFormat:@"%.2fB", (double)num / 1000000000.0];
-    } else if (num >= 1000000LL) {
-        return [NSString stringWithFormat:@"%.1fM", (double)num / 1000000.0];
-    } else if (num >= 1000LL) {
-        return [NSString stringWithFormat:@"%.1fK", (double)num / 1000.0];
-    } else {
-        return [NSString stringWithFormat:@"%lld", num];
-    }
-}
-
-- (NSString *)formatNumberWithCommas:(long long)num {
-    NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init];
-    formatter.numberStyle = NSNumberFormatterDecimalStyle;
-    return [formatter stringFromNumber:@(num)] ?: [NSString stringWithFormat:@"%lld", num];
-}
-
-- (NSString *)formatResetTime:(NSString *)isoString {
-    if (!isoString || [isoString isEqualToString:@""]) return @"";
-    NSDate *date = [self.isoFormatter dateFromString:isoString];
-    if (!date) return @"";
-
-    NSTimeInterval diff = [date timeIntervalSinceDate:[NSDate date]];
-    if (diff <= 0) return @"已重置";
-
-    int hours = (int)(diff / 3600);
-    int minutes = (int)(((long)diff % 3600) / 60);
-    int days = hours / 24;
-
-    if (days > 0) {
-        return [NSString stringWithFormat:@"%dd %dh 后刷新", days, hours % 24];
-    } else if (hours > 0) {
-        return [NSString stringWithFormat:@"%dh %dm 后刷新", hours, minutes];
-    } else {
-        return [NSString stringWithFormat:@"%dm 后刷新", minutes];
-    }
-}
-
-- (NSString *)statusEmojiForFraction:(double)fraction {
-    if (fraction >= 0.5) return @"🟢";
-    if (fraction >= 0.2) return @"🟡";
-    return @"🔴";
+    [self buildMenu];
 }
 
 #pragma mark - Network & Auto-start
@@ -138,8 +496,8 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
 - (void)handleFetchError:(NSError *)error {
     if (!self.latestStats) {
         self.statusItem.button.title = @"⚡ 离线";
+        [self.cardView updateOffline];
     }
-    [self updateMenu];
 
     if (!self.serverAutoStartAttempted) {
         self.serverAutoStartAttempted = YES;
@@ -178,7 +536,7 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
             @try {
                 [task launch];
             } @catch (NSException *e) {
-                // ignore launch errors
+                // ignore
             }
         }
     });
@@ -189,8 +547,11 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
 - (void)updateUIWithStats:(NSDictionary *)stats {
     NSDictionary *quota = stats[@"quota"];
     NSDictionary *summary = stats[@"summary"];
-    
-    // Extract 5h fraction
+
+    // Update custom card view
+    [self.cardView updateWithStats:stats];
+
+    // Extract 5h quota fraction
     double gemini5hFraction = -1.0;
     NSArray *groups = quota[@"groups"];
     if ([groups isKindOfClass:[NSArray class]]) {
@@ -207,14 +568,12 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
         }
     }
 
-    // Extract total output or total tokens
+    // Output tokens
     long long outputTokens = [summary[@"output_tokens"] longLongValue];
-    if (outputTokens == 0) {
-        outputTokens = [summary[@"total_tokens"] longLongValue];
-    }
+    if (outputTokens == 0) outputTokens = [summary[@"total_tokens"] longLongValue];
     long long totalTokens = [summary[@"total_tokens"] longLongValue];
 
-    // Low Quota Alert: only trigger when <= 15% AND continuous consumption is active
+    // Low quota notification with continuous consumption guard
     if (gemini5hFraction >= 0.0 && gemini5hFraction <= 0.15) {
         if (self.lastObservedTokens > 0 && totalTokens > self.lastObservedTokens) {
             if (!self.notifiedLowQuota) {
@@ -228,9 +587,9 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
     }
     self.lastObservedTokens = totalTokens;
 
-    // Status Item Title: exact 1 decimal digit precision (e.g. 65.1%)
+    // Top Bar Title Formatting
     NSString *quotaStr = (gemini5hFraction >= 0.0) ? [NSString stringWithFormat:@"%.1f%%", gemini5hFraction * 100.0] : @"--.-%";
-    NSString *tokenStr = [self formatTokens:outputTokens];
+    NSString *tokenStr = FormatTokens(outputTokens);
 
     switch (self.displayMode) {
         case DisplayModeQuotaAndTokens:
@@ -243,130 +602,37 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
             self.statusItem.button.title = @"⚡";
             break;
     }
-
-    [self updateMenu];
 }
 
 #pragma mark - Menu Construction
 
-- (void)updateMenu {
+- (void)buildMenu {
     NSMenu *menu = [[NSMenu alloc] init];
     menu.autoenablesItems = NO;
 
-    NSDictionary *stats = self.latestStats;
-    NSDictionary *quota = stats[@"quota"];
-    NSDictionary *summary = stats[@"summary"];
-
-    // 1. Header: Language Server Status & PID
-    BOOL isLSConnected = (quota != nil && [quota[@"status"] isEqualToString:@"ok"]);
-    NSNumber *pidNum = quota[@"pid"];
-    NSString *headerTitle = isLSConnected ?
-        [NSString stringWithFormat:@"● Antigravity 运行中 (PID: %@)", pidNum ?: @"-"] :
-        @"○ Antigravity 离线 (未检测到进程)";
-    
-    NSMenuItem *headerItem = [[NSMenuItem alloc] initWithTitle:headerTitle action:nil keyEquivalent:@""];
-    headerItem.enabled = NO;
-    [menu addItem:headerItem];
+    // 1. Embed the sleek native card view directly in the top menu item
+    NSMenuItem *cardItem = [[NSMenuItem alloc] init];
+    cardItem.view = self.cardView;
+    [menu addItem:cardItem];
 
     [menu addItem:[NSMenuItem separatorItem]];
 
-    // 2. Quotas Section
-    NSMenuItem *quotaSection = [[NSMenuItem alloc] initWithTitle:@"⏱️ 额度监控" action:nil keyEquivalent:@""];
-    quotaSection.enabled = NO;
-    [menu addItem:quotaSection];
-
-    if (quota && [quota[@"groups"] isKindOfClass:[NSArray class]]) {
-        for (NSDictionary *g in quota[@"groups"]) {
-            for (NSDictionary *b in g[@"buckets"]) {
-                NSString *bName = b[@"displayName"] ?: b[@"bucketId"];
-                double rem = [b[@"remainingFraction"] doubleValue];
-                NSString *resetStr = [self formatResetTime:b[@"resetTime"]];
-                NSString *emoji = [self statusEmojiForFraction:rem];
-
-                NSString *itemText;
-                if ([b[@"bucketId"] isEqualToString:@"gemini-5h"]) {
-                    itemText = [NSString stringWithFormat:@"   Gemini 5h 剩余:  %.1f%% %@ (%@)", rem * 100.0, emoji, resetStr];
-                } else if ([b[@"bucketId"] isEqualToString:@"gemini-weekly"]) {
-                    itemText = [NSString stringWithFormat:@"   Gemini 周剩余:   %.1f%% %@ (%@)", rem * 100.0, emoji, resetStr];
-                } else if ([b[@"bucketId"] isEqualToString:@"3p-5h"]) {
-                    itemText = [NSString stringWithFormat:@"   3P (Claude/GPT): %.1f%% %@", rem * 100.0, emoji];
-                } else {
-                    itemText = [NSString stringWithFormat:@"   %@: %.1f%% %@", bName, rem * 100.0, emoji];
-                }
-
-                NSMenuItem *bItem = [[NSMenuItem alloc] initWithTitle:itemText action:nil keyEquivalent:@""];
-                bItem.enabled = NO;
-                [menu addItem:bItem];
-            }
-        }
-    } else {
-        NSMenuItem *noQuota = [[NSMenuItem alloc] initWithTitle:@"   暂无配额数据" action:nil keyEquivalent:@""];
-        noQuota.enabled = NO;
-        [menu addItem:noQuota];
-    }
-
-    [menu addItem:[NSMenuItem separatorItem]];
-
-    // 3. Tokens & Usage Section
-    NSMenuItem *tokenSection = [[NSMenuItem alloc] initWithTitle:@"📊 Token 消耗" action:nil keyEquivalent:@""];
-    tokenSection.enabled = NO;
-    [menu addItem:tokenSection];
-
-    if (summary) {
-        long long total = [summary[@"total_tokens"] longLongValue];
-        long long prompt = [summary[@"prompt_tokens"] longLongValue];
-        long long output = [summary[@"output_tokens"] longLongValue];
-        long long cached = [summary[@"cached_tokens"] longLongValue];
-        
-        // Calculate true cache discount rate and fetch costs using exact backend keys
-        double cacheRate = (total > 0) ? ((double)cached / (double)total) * 100.0 : 0.0;
-        double estCost = [summary[@"cost_usd"] doubleValue];
-        double savedCost = [summary[@"saved_usd"] doubleValue];
-
-        NSString *totalLine = [NSString stringWithFormat:@"   总消耗 Token:    %@", [self formatNumberWithCommas:total]];
-        NSMenuItem *totalItem = [[NSMenuItem alloc] initWithTitle:totalLine action:nil keyEquivalent:@""];
-        totalItem.enabled = NO;
-        [menu addItem:totalItem];
-
-        NSString *ioLine = [NSString stringWithFormat:@"   Prompt / Output: %@ / %@", [self formatTokens:prompt], [self formatTokens:output]];
-        NSMenuItem *ioItem = [[NSMenuItem alloc] initWithTitle:ioLine action:nil keyEquivalent:@""];
-        ioItem.enabled = NO;
-        [menu addItem:ioItem];
-
-        NSString *cacheLine = [NSString stringWithFormat:@"   Context 缓存节省: %.1f%% (省下 $%.2f)", cacheRate, savedCost];
-        NSMenuItem *cacheItem = [[NSMenuItem alloc] initWithTitle:cacheLine action:nil keyEquivalent:@""];
-        cacheItem.enabled = NO;
-        [menu addItem:cacheItem];
-
-        NSString *costLine = [NSString stringWithFormat:@"   预估总费用:       $%.2f", estCost];
-        NSMenuItem *costItem = [[NSMenuItem alloc] initWithTitle:costLine action:nil keyEquivalent:@""];
-        costItem.enabled = NO;
-        [menu addItem:costItem];
-    } else {
-        NSMenuItem *noSummary = [[NSMenuItem alloc] initWithTitle:@"   暂无消耗数据" action:nil keyEquivalent:@""];
-        noSummary.enabled = NO;
-        [menu addItem:noSummary];
-    }
-
-    [menu addItem:[NSMenuItem separatorItem]];
-
-    // 4. Action Items
-    NSMenuItem *webItem = [[NSMenuItem alloc] initWithTitle:@"🌐 打开 Web 完整仪表盘..."
+    // 2. Clean, unpolluted Apple-standard Action Items (No tacky emoji prefixes)
+    NSMenuItem *webItem = [[NSMenuItem alloc] initWithTitle:@"打开 Web 完整仪表盘..."
                                                      action:@selector(openDashboard:)
                                               keyEquivalent:@"o"];
     webItem.target = self;
     [menu addItem:webItem];
 
-    NSMenuItem *refreshItem = [[NSMenuItem alloc] initWithTitle:@"🔄 立即刷新数据"
+    NSMenuItem *refreshItem = [[NSMenuItem alloc] initWithTitle:@"立即刷新数据"
                                                          action:@selector(refreshClicked:)
                                                   keyEquivalent:@"r"];
     refreshItem.target = self;
     [menu addItem:refreshItem];
 
-    // Display mode switcher (3 modes: 配额+Token / 仅配额 / 仅图标)
-    NSArray *modes = @[@"配额 + Token", @"仅配额", @"仅图标"];
-    NSString *currentModeName = modes[self.displayMode % modes.count];
-    NSString *modeTitle = [NSString stringWithFormat:@"🔀 切换顶栏显示 (%@)", currentModeName];
+    NSArray *modeNames = @[@"配额 + Token", @"仅配额", @"仅图标"];
+    NSString *currentMode = modeNames[self.displayMode % modeNames.count];
+    NSString *modeTitle = [NSString stringWithFormat:@"切换顶栏格式 (%@)", currentMode];
     NSMenuItem *modeItem = [[NSMenuItem alloc] initWithTitle:modeTitle
                                                       action:@selector(toggleDisplayMode:)
                                                keyEquivalent:@""];
@@ -375,7 +641,7 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
 
     [menu addItem:[NSMenuItem separatorItem]];
 
-    // 5. Quit Item
+    // 3. Quit
     NSMenuItem *quitItem = [[NSMenuItem alloc] initWithTitle:@"退出 Antigravity Monitor"
                                                       action:@selector(quitApp:)
                                                keyEquivalent:@"q"];
@@ -397,10 +663,9 @@ typedef NS_ENUM(NSInteger, DisplayMode) {
 
 - (void)toggleDisplayMode:(id)sender {
     self.displayMode = (DisplayMode)((self.displayMode + 1) % 3);
+    [self buildMenu];
     if (self.latestStats) {
         [self updateUIWithStats:self.latestStats];
-    } else {
-        [self updateMenu];
     }
 }
 
