@@ -1,17 +1,12 @@
-# 【开源】写了个 Antigravity 本地 Token 与官方配额监控小工具（Mac 菜单栏 / Web 面板 / 纯本地零依赖）
+# 【开源】写了个 Antigravity 的Token统计与 5h 额度监控小工具
 
-各位佬友们好！
+佬友们好！
 
-最近这段时间一直泡在 Google 的 Antigravity（就是 DeepMind 那个编程 Agent）里写代码，确实很顺手。但用得多了，有个问题特别折磨人：**官方配额完全是个黑盒**。
+最近这段时间一直猛用 Antigravity 里写代码，我有5个 Gemini Pro的号轮流蹬的爽的时候，还是想知道一下到底花了多少Token，搞了个小工具来监控。
 
-经常是代码写到兴头上，突然弹个 `ResourceExhausted` 或者 429 报错，直接歇菜。而且官方界面里只给一个粗糙的百分比，很多具体的事情根本查不到：
-- 这 5 小时的滚动配额到底还剩几分钟重置？
-- 今天到底用了多少 Token？Prompt 缓存（Prompt Cache）实际帮我省了多少？
-- 刚才让 Agent 跑完一个大重构，每一步的思考过程（Thinking Token）到底耗了多少？折算成 API 账单到底值多少钱？
+最后用这个工具统计出来4天应该是2.4B，也就是24亿Token🤣
 
-翻了一圈现有的工具，要么得装一套 Docker + PostgreSQL，几十上百兆的体积；要么得把本地日志上传到第三方的服务器上。在公司或者私有项目里敲代码，谁敢把会话数据随便往外传？
-
-实在受不了，索性自己动手写了一个：**Antigravity Token Monitor**。
+**Antigravity Token Monitor**。
 
 - **GitHub 仓库**：[https://github.com/QingYunA/antigravity-token-monitor](https://github.com/QingYunA/antigravity-token-monitor)
 - **下载地址 (Releases)**：[https://github.com/QingYunA/antigravity-token-monitor/releases/latest](https://github.com/QingYunA/antigravity-token-monitor/releases/latest)
@@ -20,7 +15,7 @@
 
 ---
 
-## 📸 界面长什么样？（图文展示）
+## 界面
 
 ### 1. Mac 菜单栏常驻小卡片
 
@@ -57,7 +52,7 @@
 python3 cli.py
 ```
 
-终端里立刻输出一张简洁的纯文本报表：
+终端输出示例：
 
 ```text
 ============================================================
@@ -78,46 +73,7 @@ python3 cli.py
 
 ---
 
-## 🔒 隐私与安全性（为什么敢放心用？）
-
-这可能是很多佬友最关心的点：
-
-1. **零数据外传**：代码全部开源，你可以随便审查代码。后端只读本机 `~/.gemini/antigravity/` 下的文件，不会向任何外部服务器发送你的代码、Prompt、Token 密钥或聊天记录。
-2. **零 pip 依赖**：后端服务纯用 Python 3 自带的标准库（`http.server`、`sqlite3`、`urllib` 等）编写。不需要 `pip install` 任何第三方包，杜绝依赖投毒风险。
-3. **本地 RPC 直连**：配额数据是通过直接探测本机正在运行的 `antigravity-language-server` 进程端口与本地 CSRF Token 获取的，跟官方编辑器拿数据的方式一模一样，不用你手动去抓包配 Cookie。
-
----
-
-## 🚀 怎么安装使用？
-
-### 方式 A：macOS 用户直接下 DMG（最简单）
-
-1. 前往 GitHub Releases：[下载 DMG 镜像文件](https://github.com/QingYunA/antigravity-token-monitor/releases/latest)
-2. 双击打开 `Antigravity-Monitor-macOS-Universal.dmg`，把图标拖进 `Applications`。
-3. 打开后，顶部菜单栏就会常驻图标了。
-   *(支持 M1/M2/M3/M4 系列芯片以及 Intel 芯片 Mac，均为原生运行)*
-
-### 方式 B：源码运行 / 纯 Python 跑
-
-如果你更喜欢自己把控代码，或者在非 Mac 系统上只想跑 Web 面板：
-
-```bash
-# 1. 克隆代码
-git clone https://github.com/QingYunA/antigravity-token-monitor.git
-cd antigravity-token-monitor
-
-# 2. 启动 Web 监控服务（直接用系统自带 python3 即可，不需要安装依赖）
-python3 server.py
-
-# 3. 浏览器打开
-open http://127.0.0.1:8765
-```
-
-如果要自己编译 Mac 原生菜单栏 App，根目录下执行 `./macos/build.sh run` 就会自动编译并启动。
-
----
-
-## 💬 闲聊与交流
+## 💬 闲聊
 
 这个小工具完全是出于自己平时敲代码的痛点随手折腾出来的。
 
