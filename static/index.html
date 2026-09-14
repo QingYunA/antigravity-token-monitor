@@ -1,11 +1,43 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Antigravity Token Monitor | 实时消耗与配额大盘</title>
   <style>
     :root {
+      /* Default Light Mode (Apple/Linear-grade crisp clean palette) */
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --border-focus: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --accent: #0284c7;
+      --accent-glow: rgba(2, 132, 199, 0.08);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --purple: #8b5cf6;
+      --orange: #f97316;
+      --radius: 12px;
+      --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+      --card-title-color: #0f172a;
+      --table-header-bg: #f8fafc;
+      --table-row-hover: #f8fafc;
+      --pill-bg: #f1f5f9;
+      --pill-border: #e2e8f0;
+      --pill-text: #475569;
+      --bar-track-bg: #e2e8f0;
+      --step-item-bg: #f8fafc;
+      --segmented-bg: #e2e8f0;
+      --segmented-active-bg: #ffffff;
+      --segmented-active-text: #0f172a;
+      --segmented-text: #64748b;
+    }
+
+    [data-theme="dark"] {
+      /* High-end Dark Tech palette */
       --bg: #090a0f;
       --card-bg: #12151e;
       --card-hover: #171b26;
@@ -20,13 +52,26 @@
       --purple: #a855f7;
       --orange: #f97316;
       --radius: 12px;
+      --card-shadow: none;
+      --card-title-color: #ffffff;
+      --table-header-bg: #151924;
+      --table-row-hover: #171b26;
+      --pill-bg: #202636;
+      --pill-border: #2a3348;
+      --pill-text: #cbd5e1;
+      --bar-track-bg: #1e2330;
+      --step-item-bg: #161a26;
+      --segmented-bg: #151924;
+      --segmented-active-bg: #252b3e;
+      --segmented-active-text: #ffffff;
+      --segmented-text: #8e9bb0;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -34,8 +79,9 @@
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.5;
-      padding: 24px;
+      padding: 28px 24px;
       min-height: 100vh;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     .container {
@@ -48,7 +94,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 24px;
+      padding-bottom: 22px;
       border-bottom: 1px solid var(--border);
       margin-bottom: 24px;
       flex-wrap: wrap;
@@ -58,47 +104,48 @@
     .logo-area {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
     .logo-badge {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #0284c7, #6366f1);
-      border-radius: 10px;
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #0284c7, #4f46e5);
+      border-radius: 11px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
-      font-size: 20px;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
     }
 
     .title-group h1 {
-      font-size: 22px;
+      font-size: 21px;
       font-weight: 700;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.4px;
+      color: var(--text);
     }
 
     .title-group p {
       font-size: 13px;
       color: var(--text-muted);
+      margin-top: 2px;
     }
 
     .controls-area {
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-wrap: wrap;
     }
 
     .live-tag {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 5px 12px;
+      padding: 6px 12px;
       border-radius: 20px;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
       font-size: 12px;
       font-weight: 600;
       color: var(--success);
@@ -114,41 +161,42 @@
 
     @keyframes pulse {
       0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
       100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
-    .currency-switch {
+    .segmented-control {
       display: flex;
-      background: var(--card-bg);
+      background: var(--segmented-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
       overflow: hidden;
       padding: 2px;
     }
 
-    .currency-btn {
+    .segment-btn {
       padding: 6px 14px;
       border: none;
       background: transparent;
-      color: var(--text-muted);
+      color: var(--segmented-text);
       cursor: pointer;
       font-size: 13px;
       font-weight: 600;
       border-radius: 6px;
-      transition: all 0.2s;
+      transition: all 0.15s ease;
     }
 
-    .currency-btn.active {
-      background: #252b3e;
-      color: var(--text);
+    .segment-btn.active {
+      background: var(--segmented-active-bg);
+      color: var(--segmented-active-text);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
-    .btn-refresh {
+    .btn-action {
       background: var(--card-bg);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 8px 16px;
+      padding: 7px 14px;
       border-radius: 8px;
       cursor: pointer;
       font-size: 13px;
@@ -156,12 +204,44 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      transition: all 0.2s;
+      transition: all 0.15s ease;
+      box-shadow: var(--card-shadow);
     }
 
-    .btn-refresh:hover {
+    .btn-action:hover {
       background: var(--card-hover);
       border-color: var(--border-focus);
+    }
+
+    /* Range Selector Bar */
+    .range-bar-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .range-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .range-bar-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .range-bar-badge {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      padding: 2px 8px;
+      border-radius: 6px;
     }
 
     /* Grid Layouts */
@@ -177,6 +257,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 20px;
+      box-shadow: var(--card-shadow);
       transition: border-color 0.2s, transform 0.15s;
     }
 
@@ -197,19 +278,20 @@
     }
 
     .card-val {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 700;
       letter-spacing: -0.5px;
-      color: #fff;
+      color: var(--card-title-color);
     }
 
     .card-sub {
-      font-size: 12px;
+      font-size: 12.5px;
       color: var(--text-muted);
-      margin-top: 6px;
+      margin-top: 8px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .tag-cached {
@@ -218,16 +300,16 @@
       padding: 2px 6px;
       border-radius: 4px;
       font-weight: 600;
-      font-size: 11px;
+      font-size: 11.5px;
     }
 
     .tag-thinking {
       color: var(--purple);
-      background: rgba(168, 85, 247, 0.15);
+      background: rgba(139, 92, 246, 0.12);
       padding: 2px 6px;
       border-radius: 4px;
       font-weight: 600;
-      font-size: 11px;
+      font-size: 11.5px;
     }
 
     /* Quota Section */
@@ -243,6 +325,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 20px;
+      box-shadow: var(--card-shadow);
     }
 
     .quota-header {
@@ -255,14 +338,17 @@
     .quota-title {
       font-size: 15px;
       font-weight: 600;
+      color: var(--text);
     }
 
     .quota-tier {
       font-size: 11px;
-      background: #1e293b;
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
       padding: 3px 8px;
-      border-radius: 4px;
-      color: #94a3b8;
+      border-radius: 5px;
+      color: var(--text-muted);
+      font-weight: 600;
     }
 
     .quota-bar-wrapper {
@@ -272,13 +358,13 @@
     .quota-bar-meta {
       display: flex;
       justify-content: space-between;
-      font-size: 12px;
+      font-size: 12.5px;
       margin-bottom: 6px;
     }
 
     .quota-bar-bg {
       height: 8px;
-      background: #1e2330;
+      background: var(--bar-track-bg);
       border-radius: 6px;
       overflow: hidden;
     }
@@ -294,7 +380,7 @@
       background: linear-gradient(90deg, #f59e0b, #ef4444);
     }
 
-    /* Two column area */
+    /* Main Grid */
     .main-cols {
       display: grid;
       grid-template-columns: 2fr 1fr;
@@ -311,10 +397,11 @@
     .section-title {
       font-size: 16px;
       font-weight: 600;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      color: var(--text);
     }
 
     /* Sessions Table */
@@ -323,6 +410,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow-x: auto;
+      box-shadow: var(--card-shadow);
     }
 
     table {
@@ -333,7 +421,7 @@
     }
 
     th {
-      background: #151924;
+      background: var(--table-header-bg);
       padding: 12px 16px;
       color: var(--text-muted);
       font-weight: 600;
@@ -343,6 +431,7 @@
     td {
       padding: 12px 16px;
       border-bottom: 1px solid var(--border);
+      color: var(--text);
     }
 
     tr:last-child td {
@@ -350,7 +439,7 @@
     }
 
     tr:hover td {
-      background: var(--card-hover);
+      background: var(--table-row-hover);
       cursor: pointer;
     }
 
@@ -360,12 +449,14 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      color: var(--text);
     }
 
     .sess-model {
       font-size: 11px;
       color: var(--text-muted);
-      font-family: ui-monospace, monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      margin-top: 2px;
     }
 
     /* Step Timeline Modal / Detail Drawer */
@@ -375,6 +466,7 @@
       border-radius: var(--radius);
       padding: 20px;
       height: fit-content;
+      box-shadow: var(--card-shadow);
     }
 
     .step-list {
@@ -389,7 +481,7 @@
 
     .step-item {
       padding: 10px 12px;
-      background: #161a26;
+      background: var(--step-item-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
       font-size: 12px;
@@ -400,7 +492,7 @@
       justify-content: space-between;
       margin-bottom: 4px;
       font-weight: 600;
-      color: var(--text-muted);
+      color: var(--text);
     }
 
     .step-pills {
@@ -411,9 +503,12 @@
 
     .pill {
       font-size: 11px;
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 4px;
-      background: #202636;
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      color: var(--pill-text);
+      font-weight: 500;
     }
 
     /* Model Distribution Card */
@@ -428,9 +523,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 12px;
-      background: #161a26;
-      border-radius: 6px;
+      padding: 10px 12px;
+      background: var(--step-item-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
       font-size: 13px;
     }
 
@@ -440,7 +536,7 @@
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: var(--bg);
+      background: transparent;
     }
     ::-webkit-scrollbar-thumb {
       background: var(--border);
@@ -456,7 +552,13 @@
     <!-- Header -->
     <header>
       <div class="logo-area">
-        <div class="logo-badge">⚡</div>
+        <div class="logo-badge">
+          <!-- Vector Inverted Delta Emblem with Floating Core (Antigravity Logo) -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M4 6.5h16l-8 14z" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="2.4" fill="#ffffff"/>
+          </svg>
+        </div>
         <div class="title-group">
           <h1>Antigravity Token Monitor</h1>
           <p>实时大语言模型 Token 消耗、缓存节省与官方配额监控大盘</p>
@@ -467,71 +569,105 @@
           <span class="pulse-dot"></span>
           <span id="liveStatusText">LIVE (SSE 已连接)</span>
         </div>
-        <div class="currency-switch">
-          <button class="currency-btn active" id="btnUSD" onclick="setCurrency('USD')">$ 美元</button>
-          <button class="currency-btn" id="btnCNY" onclick="setCurrency('CNY')">¥ 人民币</button>
+        <!-- Currency Selector -->
+        <div class="segmented-control">
+          <button class="segment-btn active" id="btnUSD" onclick="setCurrency('USD')">$ 美元</button>
+          <button class="segment-btn" id="btnCNY" onclick="setCurrency('CNY')">¥ 人民币</button>
         </div>
-        <button class="btn-refresh" onclick="fetchData()">
+        <!-- Theme Toggle Button -->
+        <button class="btn-action" id="btnThemeToggle" onclick="toggleTheme()" title="切换明亮 / 暗黑主题">
+          <svg id="themeIconSun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg id="themeIconMoon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <span id="themeLabelText">浅色模式</span>
+        </button>
+        <!-- Refresh Button -->
+        <button class="btn-action" onclick="fetchData()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
           刷新
         </button>
       </div>
     </header>
 
-    <!-- Top Bento Metrics -->
+    <!-- Time Range Selector Bar -->
+    <div class="range-bar-wrapper">
+      <div class="range-bar-left">
+        <span class="range-bar-title">用量与成本概览</span>
+        <span class="range-bar-badge" id="activeRangeBadge">当前统计: 近 7 天</span>
+      </div>
+      <div class="segmented-control" id="rangeControlGroup">
+        <button class="segment-btn" id="tabToday" onclick="setTimeRange('today')">今天 (Today)</button>
+        <button class="segment-btn active" id="tab7d" onclick="setTimeRange('7d')">近 7 天 (7 Days)</button>
+        <button class="segment-btn" id="tab30d" onclick="setTimeRange('30d')">最近 30 天 (30 Days)</button>
+        <button class="segment-btn" id="tabAll" onclick="setTimeRange('all')">全部历史 (All Time)</button>
+      </div>
+    </div>
+
+    <!-- Top Bento Metrics (Dynamically responds to Time Range) -->
     <div class="bento-grid">
       <div class="card">
-        <div class="card-label">总消耗 Token (Total Tokens)</div>
+        <div class="card-label">
+          <span id="cardLabelTokens">近 7 天总消耗 Token</span>
+          <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">Tokens</span>
+        </div>
         <div class="card-val" id="valTotalTokens">--</div>
-        <div class="card-sub">
-          <span>今日: <strong id="valTodayTokens">--</strong></span>
-          <span style="margin-left: 8px;">近7天: <strong id="val7dTokens">--</strong></span>
+        <div class="card-sub" id="subTotalTokens">
+          <span>输入: <strong id="valPromptTokens">--</strong></span>
+          <span>输出: <strong id="valOutputTokens">--</strong></span>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-label">上下文缓存命中 (Cached Context)</div>
+        <div class="card-label">
+          <span>上下文缓存命中</span>
+          <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">Cache</span>
+        </div>
         <div class="card-val" id="valCachedTokens">--</div>
         <div class="card-sub">
-          <span class="tag-cached" id="valCacheRate">0% 命中率</span>
-          <span id="valSavedCost">省 $0.00</span>
+          <span class="tag-cached" id="valCacheRate">0.0% 命中率</span>
+          <span id="valSavedCost">省下 $0.00</span>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-label">深度思考消耗 (Thinking Tokens)</div>
+        <div class="card-label">
+          <span>深度思考消耗</span>
+          <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">Thinking</span>
+        </div>
         <div class="card-val" id="valThinkingTokens">--</div>
         <div class="card-sub">
           <span class="tag-thinking">Gemini / Claude Thinking</span>
-          <span id="valThinkingRatio">--</span>
+          <span id="valThinkingRatio">占输出 0.0%</span>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-label">折算总成本 (Estimated Cost)</div>
-        <div class="card-val" style="color: #38bdf8;" id="valTotalCost">--</div>
-        <div class="card-sub">
-          <span>今日: <strong id="valTodayCost">--</strong></span>
-          <span style="margin-left: 8px;">近7天: <strong id="val7dCost">--</strong></span>
+        <div class="card-label">
+          <span id="cardLabelCost">近 7 天折算成本</span>
+          <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">Estimated</span>
+        </div>
+        <div class="card-val" style="color: var(--accent);" id="valTotalCost">--</div>
+        <div class="card-sub" id="subTotalCost">
+          <span>平均/1M: <strong id="valAvgCost">--</strong></span>
+          <span id="valTokensComparison" style="color: var(--text-muted);">--</span>
         </div>
       </div>
     </div>
 
-    <!-- 7-Day SVG Trend Chart Section -->
+    <!-- Dynamic Trend Chart Section -->
     <div class="card" style="margin-bottom: 24px; padding: 20px;">
       <div class="section-title" style="margin-bottom: 8px;">
-        <span>近 7 天 Token 消耗时序趋势 (7-Day Token Velocity)</span>
-        <div style="font-size: 11px; display: flex; gap: 12px; align-items: center;">
-          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #38bdf8; border-radius: 2px;"></span> 缓存命中</span>
+        <span id="chartSectionTitle">Token 消耗时序趋势 (近 7 天)</span>
+        <div style="font-size: 11.5px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #0284c7; border-radius: 2px;"></span> 缓存命中</span>
           <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #6366f1; border-radius: 2px;"></span> 新输入</span>
           <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #10b981; border-radius: 2px;"></span> 正文输出</span>
-          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #a855f7; border-radius: 2px;"></span> 深度思考</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #8b5cf6; border-radius: 2px;"></span> 深度思考</span>
         </div>
       </div>
-      <div id="trendChartSvgContainer" style="width: 100%; height: 160px; margin-top: 12px;"></div>
+      <div id="trendChartSvgContainer" style="width: 100%; height: 160px; margin-top: 14px;"></div>
     </div>
 
-    <!-- Official Quota Cards (from LS RPC) -->
+    <!-- Official Quota Cards (from Language Server RPC) -->
     <div class="section-title">
       <span>官方实时配额状态 (Language Server Quota)</span>
       <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;" id="quotaLastUpdated">--</span>
@@ -600,8 +736,32 @@
 
   <script>
     let currentCurrency = 'USD';
+    let currentRange = '7d'; // 'today' | '7d' | '30d' | 'all'
+    let currentTheme = localStorage.getItem('antigravity_theme') || 'light';
     let globalData = null;
     let selectedConversationId = null;
+
+    // Apply initial theme
+    function applyTheme(theme) {
+      currentTheme = theme;
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('antigravity_theme', theme);
+
+      const isLight = (theme === 'light');
+      document.getElementById('themeIconSun').style.display = isLight ? 'inline' : 'none';
+      document.getElementById('themeIconMoon').style.display = isLight ? 'none' : 'inline';
+      document.getElementById('themeLabelText').innerText = isLight ? '浅色模式' : '暗黑模式';
+
+      if (globalData) {
+        renderTrendChart(globalData.daily_timeline || []);
+      }
+    }
+
+    function toggleTheme() {
+      applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+    }
+
+    applyTheme(currentTheme);
 
     function formatNumber(num) {
       if (num === undefined || num === null) return '0';
@@ -611,14 +771,14 @@
     function formatCompact(num) {
       if (!num) return '0';
       if (num >= 1e9) return (num / 1e9).toFixed(2) + ' B';
-      if (num >= 1e6) return (num / 1e6).toFixed(2) + ' M';
+      if (num >= 1e6) return (num / 1e6).toFixed(1) + ' M';
       if (num >= 1e3) return (num / 1e3).toFixed(1) + ' K';
       return num.toString();
     }
 
     function formatCurrency(usdVal, cnyVal) {
       if (currentCurrency === 'USD') {
-        return '$' + (usdVal || 0).toFixed(4);
+        return '$' + (usdVal || 0).toFixed(2);
       } else {
         return '¥' + (cnyVal || 0).toFixed(2);
       }
@@ -628,6 +788,14 @@
       currentCurrency = curr;
       document.getElementById('btnUSD').classList.toggle('active', curr === 'USD');
       document.getElementById('btnCNY').classList.toggle('active', curr === 'CNY');
+      if (globalData) renderUI(globalData);
+    }
+
+    function setTimeRange(range) {
+      currentRange = range;
+      document.querySelectorAll('#rangeControlGroup .segment-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.id === 'tab' + range.charAt(0).toUpperCase() + range.slice(1));
+      });
       if (globalData) renderUI(globalData);
     }
 
@@ -650,38 +818,81 @@
       const sum = data.summary || {};
       const today = data.today || {};
       const last7d = data.last_7d || {};
+      const last30d = data.last_30d || last7d;
 
-      // 1. Bento Metrics
-      document.getElementById('valTotalTokens').innerText = formatCompact(sum.total_tokens);
-      document.getElementById('valTodayTokens').innerText = formatCompact(today.total_tokens);
-      document.getElementById('val7dTokens').innerText = formatCompact(last7d.total_tokens);
+      // Determine active stats based on selected time range
+      let activeStats = last7d;
+      let rangeNameZh = '近 7 天';
+      let chartDays = 7;
 
-      document.getElementById('valCachedTokens').innerText = formatCompact(sum.cached_tokens);
-      const cachePercent = sum.total_tokens ? ((sum.cached_tokens / sum.total_tokens) * 100).toFixed(1) : 0;
-      document.getElementById('valCacheRate').innerText = `${cachePercent}% 缓存率`;
-      document.getElementById('valSavedCost').innerText = `节省 ${formatCurrency(sum.saved_usd, sum.saved_cny)}`;
+      if (currentRange === 'today') {
+        activeStats = today;
+        rangeNameZh = '今日';
+        chartDays = 7;
+      } else if (currentRange === '7d') {
+        activeStats = last7d;
+        rangeNameZh = '近 7 天';
+        chartDays = 7;
+      } else if (currentRange === '30d') {
+        activeStats = last30d;
+        rangeNameZh = '最近 30 天';
+        chartDays = 30;
+      } else if (currentRange === 'all') {
+        activeStats = sum;
+        rangeNameZh = '全部历史';
+        chartDays = 30;
+      }
 
-      document.getElementById('valThinkingTokens').innerText = formatCompact(sum.thinking_tokens);
-      const thinkingPercent = sum.output_tokens ? ((sum.thinking_tokens / sum.output_tokens) * 100).toFixed(1) : 0;
+      // Update Range Badge & Section Titles
+      document.getElementById('activeRangeBadge').innerText = `当前统计: ${rangeNameZh}`;
+      document.getElementById('cardLabelTokens').innerText = `${rangeNameZh}消耗 Token`;
+      document.getElementById('cardLabelCost').innerText = `${rangeNameZh}折算成本`;
+      document.getElementById('chartSectionTitle').innerText = `Token 消耗时序趋势 (${rangeNameZh})`;
+
+      // 1. Bento Metric 1: Total Tokens
+      document.getElementById('valTotalTokens').innerText = formatCompact(activeStats.total_tokens);
+      document.getElementById('valPromptTokens').innerText = formatCompact(activeStats.prompt_tokens);
+      document.getElementById('valOutputTokens').innerText = formatCompact(activeStats.output_tokens);
+
+      // 2. Bento Metric 2: Cached Tokens & Hit Rate
+      document.getElementById('valCachedTokens').innerText = formatCompact(activeStats.cached_tokens);
+      const totalTok = activeStats.total_tokens || 0;
+      const cachePercent = totalTok > 0 ? ((activeStats.cached_tokens / totalTok) * 100).toFixed(1) : '0.0';
+      document.getElementById('valCacheRate').innerText = `${cachePercent}% 命中率`;
+      document.getElementById('valSavedCost').innerText = `省下 ${formatCurrency(activeStats.saved_usd, activeStats.saved_cny)}`;
+
+      // 3. Bento Metric 3: Thinking Tokens
+      document.getElementById('valThinkingTokens').innerText = formatCompact(activeStats.thinking_tokens);
+      const outTok = activeStats.output_tokens || 0;
+      const thinkingPercent = outTok > 0 ? ((activeStats.thinking_tokens / outTok) * 100).toFixed(1) : '0.0';
       document.getElementById('valThinkingRatio').innerText = `占输出 ${thinkingPercent}%`;
 
-      document.getElementById('valTotalCost').innerText = formatCurrency(sum.cost_usd, sum.cost_cny);
-      document.getElementById('valTodayCost').innerText = formatCurrency(today.cost_usd, today.cost_cny);
-      document.getElementById('val7dCost').innerText = formatCurrency(last7d.cost_usd, last7d.cost_cny);
+      // 4. Bento Metric 4: Estimated Cost
+      document.getElementById('valTotalCost').innerText = formatCurrency(activeStats.cost_usd, activeStats.cost_cny);
+      if (totalTok > 0 && activeStats.cost_usd) {
+        const avgUsdPerM = (activeStats.cost_usd / (totalTok / 1e6));
+        const avgCnyPerM = (activeStats.cost_cny / (totalTok / 1e6));
+        document.getElementById('valAvgCost').innerText = formatCurrency(avgUsdPerM, avgCnyPerM);
+      } else {
+        document.getElementById('valAvgCost').innerText = formatCurrency(0, 0);
+      }
+      document.getElementById('valTokensComparison').innerText = `共 ${formatCompact(totalTok)} Tokens`;
 
-      // 2. Trend SVG Chart
-      renderTrendChart(data.daily_timeline || []);
+      // 5. Trend SVG Chart (Slice according to time range)
+      const fullTimeline = data.daily_timeline || [];
+      const slicedTimeline = fullTimeline.slice(-chartDays);
+      renderTrendChart(slicedTimeline);
 
-      // 3. Quota Cards
+      // 6. Quota Cards
       renderQuota(data.quota);
 
-      // 4. Conversations Table
+      // 7. Conversations Table
       renderConversations(data.conversations || []);
 
-      // 5. Model Breakdown
+      // 8. Model Breakdown
       renderModels(data.models || {});
 
-      // 6. If current conversation selected, update details
+      // 9. If conversation selected, update details
       if (selectedConversationId) {
         loadConversationSteps(selectedConversationId);
       } else if (data.conversations && data.conversations.length > 0) {
@@ -692,53 +903,59 @@
     function renderTrendChart(timeline) {
       const container = document.getElementById('trendChartSvgContainer');
       if (!timeline || !timeline.length) {
-        container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">暂无历史时序数据</div>';
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px; text-align: center; padding-top: 40px;">暂无历史时序数据</div>';
         return;
       }
 
+      const isDark = (currentTheme === 'dark');
+      const textColor = isDark ? '#94a3b8' : '#64748b';
+      const labelColor = isDark ? '#64748b' : '#94a3b8';
+
       const maxVal = Math.max(...timeline.map(d => (d.prompt + d.cached + d.output)), 1);
-      const width = 800;
-      const height = 140;
-      const padding = 28;
-      const barWidth = 32;
-      const gap = (width - padding * 2) / timeline.length;
+      const width = 840;
+      const height = 150;
+      const padding = 20;
+      const count = timeline.length;
+      const gap = (width - padding * 2) / count;
+      const barWidth = Math.max(8, Math.min(32, gap * 0.7));
 
       let svg = `<svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: 100%; overflow: visible;">`;
 
       timeline.forEach((d, i) => {
         const x = padding + i * gap + (gap - barWidth) / 2;
         const total = d.prompt + d.cached + d.output;
-        const hTotal = (total / maxVal) * (height - 35);
 
-        const hCached = ((d.cached || 0) / maxVal) * (height - 35);
-        const hPrompt = ((d.prompt || 0) / maxVal) * (height - 35);
-        const hOutput = (((d.output || 0) - (d.thinking || 0)) / maxVal) * (height - 35);
-        const hThinking = ((d.thinking || 0) / maxVal) * (height - 35);
+        const hCached = ((d.cached || 0) / maxVal) * (height - 38);
+        const hPrompt = ((d.prompt || 0) / maxVal) * (height - 38);
+        const hOutput = (((d.output || 0) - (d.thinking || 0)) / maxVal) * (height - 38);
+        const hThinking = ((d.thinking || 0) / maxVal) * (height - 38);
 
-        let yCurrent = height - 20;
+        let yCurrent = height - 22;
 
         // Cached
         yCurrent -= hCached;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hCached}" fill="#38bdf8" rx="2"><title>${d.day} 缓存: ${formatNumber(d.cached)}</title></rect>`;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hCached}" fill="#0284c7" rx="2"><title>${d.day} 缓存: ${formatNumber(d.cached)}</title></rect>`;
 
         // Prompt
         yCurrent -= hPrompt;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hPrompt}" fill="#6366f1"><title>${d.day} 输入: ${formatNumber(d.prompt)}</title></rect>`;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hPrompt}" fill="#6366f1" rx="2"><title>${d.day} 输入: ${formatNumber(d.prompt)}</title></rect>`;
 
         // Output
         yCurrent -= hOutput;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hOutput}" fill="#10b981"><title>${d.day} 输出: ${formatNumber(d.output)}</title></rect>`;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hOutput}" fill="#10b981" rx="2"><title>${d.day} 输出: ${formatNumber(d.output)}</title></rect>`;
 
         // Thinking
         yCurrent -= hThinking;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hThinking}" fill="#a855f7"><title>${d.day} 思考: ${formatNumber(d.thinking)}</title></rect>`;
+        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hThinking}" fill="#8b5cf6" rx="2"><title>${d.day} 思考: ${formatNumber(d.thinking)}</title></rect>`;
 
         // Day label
-        svg += `<text x="${x + barWidth / 2}" y="${height - 4}" fill="#64748b" font-size="11" text-anchor="middle">${d.day}</text>`;
+        if (count <= 14 || i % 3 === 0 || i === count - 1) {
+          svg += `<text x="${x + barWidth / 2}" y="${height - 4}" fill="${labelColor}" font-size="10.5" font-weight="500" text-anchor="middle">${d.day}</text>`;
+        }
 
         // Top value text
-        if (total > 0) {
-          svg += `<text x="${x + barWidth / 2}" y="${Math.max(10, yCurrent - 4)}" fill="#94a3b8" font-size="10" text-anchor="middle">${formatCompact(total)}</text>`;
+        if (total > 0 && (count <= 14 || i % 2 === 0)) {
+          svg += `<text x="${x + barWidth / 2}" y="${Math.max(12, yCurrent - 4)}" fill="${textColor}" font-size="9.5" font-weight="600" text-anchor="middle">${formatCompact(total)}</text>`;
         }
       });
 
@@ -750,9 +967,12 @@
       const tbody = document.getElementById('convTableBody');
       document.getElementById('convCountText').innerText = `共 ${convs.length} 个会话`;
       if (!convs.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">暂无会话数据</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">暂无会话数据</td></tr>';
         return;
       }
+
+      const isDark = (currentTheme === 'dark');
+      const selectedBg = isDark ? '#1a2233' : '#e0f2fe';
 
       tbody.innerHTML = convs.slice(0, 15).map(c => {
         const isSelected = c.conversation_id === selectedConversationId;
@@ -765,18 +985,18 @@
         }
 
         return `
-          <tr onclick="loadConversationSteps('${c.conversation_id}')" style="${isSelected ? 'background: #1a2233;' : ''}">
+          <tr onclick="loadConversationSteps('${c.conversation_id}')" style="${isSelected ? `background: ${selectedBg};` : ''}">
             <td>
               <div class="sess-title" title="${c.title}">${c.title}</div>
               <div class="sess-model">
                 ${c.conversation_id.slice(0, 8)}... (${c.step_count} 步)
-                ${wsName ? `<span class="pill" style="margin-left: 6px; color: #94a3b8;">📁 ${wsName}</span>` : ''}
+                ${wsName ? `<span class="pill" style="margin-left: 6px;">📁 ${wsName}</span>` : ''}
               </div>
             </td>
             <td><span class="pill">${c.model || 'gemini'}</span></td>
             <td><strong>${formatCompact(c.totals.total_tokens)}</strong></td>
             <td><span class="tag-cached">${formatCompact(c.totals.cached_tokens)}</span></td>
-            <td style="color: #38bdf8;">${formatCurrency(c.totals.cost_usd, c.totals.cost_cny)}</td>
+            <td style="color: var(--accent); font-weight: 600;">${formatCurrency(c.totals.cost_usd, c.totals.cost_cny)}</td>
             <td style="color: var(--text-muted); font-size: 11px;">${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
           </tr>
         `;
@@ -830,38 +1050,11 @@
       container.innerHTML = html;
     }
 
-    function renderConversations(convs) {
-      const tbody = document.getElementById('convTableBody');
-      document.getElementById('convCountText').innerText = `共 ${convs.length} 个会话`;
-      if (!convs.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">暂无会话数据</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = convs.slice(0, 15).map(c => {
-        const isSelected = c.conversation_id === selectedConversationId;
-        const dt = new Date(c.last_modified);
-        return `
-          <tr onclick="loadConversationSteps('${c.conversation_id}')" style="${isSelected ? 'background: #1a2233;' : ''}">
-            <td>
-              <div class="sess-title" title="${c.title}">${c.title}</div>
-              <div class="sess-model">${c.conversation_id.slice(0, 8)}... (${c.step_count} 步)</div>
-            </td>
-            <td><span class="pill">${c.model || 'gemini'}</span></td>
-            <td><strong>${formatCompact(c.totals.total_tokens)}</strong></td>
-            <td><span class="tag-cached">${formatCompact(c.totals.cached_tokens)}</span></td>
-            <td style="color: #38bdf8;">${formatCurrency(c.totals.cost_usd, c.totals.cost_cny)}</td>
-            <td style="color: var(--text-muted); font-size: 11px;">${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-          </tr>
-        `;
-      }).join('');
-    }
-
     function renderModels(models) {
       const container = document.getElementById('modelListContainer');
       const keys = Object.keys(models);
       if (!keys.length) {
-        container.innerHTML = '<div style="color: var(--text-muted);">无模型数据</div>';
+        container.innerHTML = '<div style="color: var(--text-muted); padding: 12px; font-size: 13px;">无模型数据</div>';
         return;
       }
 
@@ -870,10 +1063,10 @@
         return `
           <div class="model-item">
             <div>
-              <div style="font-weight: 600;">${k}</div>
-              <div style="font-size: 11px; color: var(--text-muted);">${formatCompact(m.total_tokens)} Tokens</div>
+              <div style="font-weight: 600; color: var(--text);">${k}</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${formatCompact(m.total_tokens)} Tokens</div>
             </div>
-            <div style="font-weight: 600; color: #38bdf8;">
+            <div style="font-weight: 600; color: var(--accent);">
               ${formatCurrency(m.cost_usd, m.cost_cny)}
             </div>
           </div>
@@ -890,7 +1083,7 @@
       document.getElementById('activeDetailSubtitle').innerText = `共 ${data.steps.length} 步交互明细`;
 
       if (!data.steps.length) {
-        listEl.innerHTML = '<div style="color: var(--text-muted);">该会话暂无生成步骤</div>';
+        listEl.innerHTML = '<div style="color: var(--text-muted); padding: 12px; font-size: 13px;">该会话暂无生成步骤</div>';
         return;
       }
 
@@ -899,7 +1092,7 @@
           <div class="step-item">
             <div class="step-item-header">
               <span>步骤 #${s.step_index}</span>
-              <span style="color: #38bdf8;">${formatCurrency(s.cost_usd, s.cost_cny)}</span>
+              <span style="color: var(--accent); font-weight: 600;">${formatCurrency(s.cost_usd, s.cost_cny)}</span>
             </div>
             <div class="step-pills">
               <span class="pill">入: ${formatNumber(s.prompt_tokens)}</span>

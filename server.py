@@ -111,6 +111,7 @@ class MonitorHandler(SimpleHTTPRequestHandler):
                 "summary": metrics.get("summary", {}),
                 "today": metrics.get("today", {}),
                 "last_7d": metrics.get("last_7d", {}),
+                "last_30d": metrics.get("last_30d", {}),
                 "models": metrics.get("models", {}),
             }
             self._handle_json(combined)

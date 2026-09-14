@@ -12,12 +12,38 @@
 #define CARD_WIDTH 310.0
 
 typedef NS_ENUM(NSInteger, DisplayMode) {
-    DisplayModeQuotaAndTokens = 0, // ⚡ 65.1% · 9.2M
-    DisplayModeQuotaOnly      = 1, // ⚡ 65.1%
-    DisplayModeIconOnly       = 2  // ⚡
+    DisplayModeQuotaAndTokens = 0, // [Logo] 65.1% · 9.2M
+    DisplayModeQuotaOnly      = 1, // [Logo] 65.1%
+    DisplayModeIconOnly       = 2  // [Logo]
 };
 
 #pragma mark - Helper Functions
+
+static NSImage *CreateAntigravityLogoImage(void) {
+    NSSize size = NSMakeSize(16.0, 16.0);
+    NSImage *image = [NSImage imageWithSize:size flipped:NO drawingHandler:^BOOL(NSRect dstRect) {
+        // High-end minimalist vector logo: Inverted geometric delta with floating core
+        [[NSColor blackColor] setStroke];
+        [[NSColor blackColor] setFill];
+
+        NSBezierPath *delta = [NSBezierPath bezierPath];
+        [delta moveToPoint:NSMakePoint(2.0, 12.5)];
+        [delta lineToPoint:NSMakePoint(14.0, 12.5)];
+        [delta lineToPoint:NSMakePoint(8.0, 2.5)];
+        [delta closePath];
+        delta.lineWidth = 1.5;
+        delta.lineJoinStyle = NSLineJoinStyleRound;
+        [delta stroke];
+
+        NSRect coreRect = NSMakeRect(6.5, 7.5, 3.0, 3.0);
+        NSBezierPath *core = [NSBezierPath bezierPathWithOvalInRect:coreRect];
+        [core fill];
+
+        return YES;
+    }];
+    [image setTemplate:YES];
+    return image;
+}
 
 static NSString *FormatTokens(long long num) {
     if (num >= 1000000000LL) {
@@ -215,8 +241,6 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
 @property (nonatomic, strong) NSTextField *weekUsageRightLabel;
 @property (nonatomic, strong) NSTextField *cacheLeftLabel;
 @property (nonatomic, strong) NSTextField *cacheRightLabel;
-@property (nonatomic, strong) NSTextField *tokensLeftLabel;
-@property (nonatomic, strong) NSTextField *tokensRightLabel;
 @property (nonatomic, strong) NSTextField *todayUsageLeftLabel;
 @property (nonatomic, strong) NSTextField *todayUsageRightLabel;
 
@@ -301,18 +325,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         [self addSubview:_cacheRightLabel];
         y += 17.0;
 
-        // Row 3: Input / Output Tokens
-        _tokensLeftLabel = CreateLabel(@"输入 / 输出 Token", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
-        _tokensLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 14);
-        [self addSubview:_tokensLeftLabel];
-
-        _tokensRightLabel = CreateLabel(@"0 / 0", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
-        _tokensRightLabel.alignment = NSTextAlignmentRight;
-        _tokensRightLabel.frame = NSMakeRect(paddingX + contentW * 0.45, y, contentW * 0.55, 14);
-        [self addSubview:_tokensRightLabel];
-        y += 17.0;
-
-        // Row 4: Today's Token Usage
+        // Row 3: Today's Token Usage
         _todayUsageLeftLabel = CreateLabel(@"今日 Token 消耗", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
         _todayUsageLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 14);
         [self addSubview:_todayUsageLeftLabel];
@@ -428,10 +441,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         // Row 2: Cache Hit Rate & Savings
         self.cacheRightLabel.stringValue = [NSString stringWithFormat:@"%.1f%% (省下 $%.2f)", cacheRate, savedUsd];
 
-        // Row 3: Input / Output Tokens
-        self.tokensRightLabel.stringValue = [NSString stringWithFormat:@"%@ / %@", FormatTokens(prompt), FormatTokens(output)];
-
-        // Row 4: Today's Token Usage
+        // Row 3: Today's Token Usage
         long long todayTokens = [today[@"total_tokens"] longLongValue];
         double todayCost = [today[@"cost_usd"] doubleValue];
         self.todayUsageRightLabel.stringValue = [NSString stringWithFormat:@"%@ ($%.2f)", FormatTokens(todayTokens), todayCost];
@@ -469,8 +479,8 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
     // Accessory menu bar extra: no Dock icon, never steal window focus
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
 
-    // Card frame: 310 x 304
-    self.cardView = [[AntigravityCardView alloc] initWithFrame:NSMakeRect(0, 0, CARD_WIDTH, 304.0)];
+    // Card frame: 310 x 286
+    self.cardView = [[AntigravityCardView alloc] initWithFrame:NSMakeRect(0, 0, CARD_WIDTH, 286.0)];
 
     [self setupStatusItem];
     [self fetchStats];
@@ -486,7 +496,9 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
 
 - (void)setupStatusItem {
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
-    self.statusItem.button.title = @"⚡ --.-%";
+    self.statusItem.button.image = CreateAntigravityLogoImage();
+    self.statusItem.button.imagePosition = NSImageLeft;
+    self.statusItem.button.title = @" --.-%";
     self.statusItem.button.toolTip = @"Antigravity Token Monitor";
     [self buildMenu];
 }
@@ -526,7 +538,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
 
 - (void)handleFetchError:(NSError *)error {
     if (!self.latestStats) {
-        self.statusItem.button.title = @"⚡ 离线";
+        self.statusItem.button.title = @" 离线";
         [self.cardView updateOffline];
     }
 
@@ -618,19 +630,19 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
     }
     self.lastObservedTokens = totalTokens;
 
-    // Top Bar Title Formatting
+    // Top Bar Title Formatting (Clean typography with native vector template logo)
     NSString *quotaStr = (gemini5hFraction >= 0.0) ? [NSString stringWithFormat:@"%.1f%%", gemini5hFraction * 100.0] : @"--.-%";
     NSString *tokenStr = FormatTokens(outputTokens);
 
     switch (self.displayMode) {
         case DisplayModeQuotaAndTokens:
-            self.statusItem.button.title = [NSString stringWithFormat:@"⚡ %@ · %@", quotaStr, tokenStr];
+            self.statusItem.button.title = [NSString stringWithFormat:@" %@ · %@", quotaStr, tokenStr];
             break;
         case DisplayModeQuotaOnly:
-            self.statusItem.button.title = [NSString stringWithFormat:@"⚡ %@", quotaStr];
+            self.statusItem.button.title = [NSString stringWithFormat:@" %@", quotaStr];
             break;
         case DisplayModeIconOnly:
-            self.statusItem.button.title = @"⚡";
+            self.statusItem.button.title = @"";
             break;
     }
 }

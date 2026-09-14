@@ -26,6 +26,8 @@ class TestServer(unittest.TestCase):
             data = json.loads(resp.read().decode("utf-8"))
             self.assertIn("summary", data)
             self.assertIn("today", data)
+            self.assertIn("last_7d", data)
+            self.assertIn("last_30d", data)
             self.assertIn("models", data)
 
     def test_api_quota(self):
@@ -45,6 +47,8 @@ class TestServer(unittest.TestCase):
             self.assertIn("quota", data)
             self.assertIn("summary", data)
             self.assertIn("today", data)
+            self.assertIn("last_7d", data)
+            self.assertIn("last_30d", data)
 
     def test_static_index(self):
         url = f"http://127.0.0.1:{self.port}/"
