@@ -102,6 +102,19 @@ class MonitorHandler(SimpleHTTPRequestHandler):
             self._handle_json(ls_client.get_quota())
             return
 
+        elif path == "/api/stats":
+            metrics = telemetry_parser.get_all_metrics()
+            combined = {
+                "status": "ok",
+                "timestamp": time.time(),
+                "quota": ls_client.get_quota(),
+                "summary": metrics.get("summary", {}),
+                "today": metrics.get("today", {}),
+                "models": metrics.get("models", {}),
+            }
+            self._handle_json(combined)
+            return
+
         elif path.startswith("/api/conversation/"):
             cid = path.replace("/api/conversation/", "").strip()
             data = telemetry_parser.parse_single_conversation(cid)
