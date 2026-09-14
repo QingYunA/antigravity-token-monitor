@@ -110,6 +110,7 @@ class MonitorHandler(SimpleHTTPRequestHandler):
                 "quota": ls_client.get_quota(),
                 "summary": metrics.get("summary", {}),
                 "today": metrics.get("today", {}),
+                "last_7d": metrics.get("last_7d", {}),
                 "models": metrics.get("models", {}),
             }
             self._handle_json(combined)

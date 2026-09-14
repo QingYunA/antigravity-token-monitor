@@ -211,12 +211,14 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
 @property (nonatomic, strong) MetricRowView *thirdPartyRow;
 
 @property (nonatomic, strong) NSTextField *usageSectionTitle;
-@property (nonatomic, strong) NSTextField *costLeftLabel;
-@property (nonatomic, strong) NSTextField *costRightLabel;
+@property (nonatomic, strong) NSTextField *weekUsageLeftLabel;
+@property (nonatomic, strong) NSTextField *weekUsageRightLabel;
 @property (nonatomic, strong) NSTextField *cacheLeftLabel;
 @property (nonatomic, strong) NSTextField *cacheRightLabel;
 @property (nonatomic, strong) NSTextField *tokensLeftLabel;
 @property (nonatomic, strong) NSTextField *tokensRightLabel;
+@property (nonatomic, strong) NSTextField *todayUsageLeftLabel;
+@property (nonatomic, strong) NSTextField *todayUsageRightLabel;
 
 @property (nonatomic, strong) NSISO8601DateFormatter *isoFormatter;
 @end
@@ -271,25 +273,25 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         [self addDividerAtY:y width:contentW paddingX:paddingX];
         y += 10.0;
 
-        // 3. Usage & Spend Section
-        _usageSectionTitle = CreateLabel(@"消耗与费用 (Cost & Usage)", 11.0, NSFontWeightSemibold, [NSColor secondaryLabelColor]);
+        // 3. Usage & Spend Section (Token-first sequence)
+        _usageSectionTitle = CreateLabel(@"用量与活动 (Usage & Activity)", 11.0, NSFontWeightSemibold, [NSColor secondaryLabelColor]);
         _usageSectionTitle.frame = NSMakeRect(paddingX, y, contentW, 14);
         [self addSubview:_usageSectionTitle];
         y += 18.0;
 
-        // Row 1: Cost
-        _costLeftLabel = CreateLabel(@"总计预估费用", 11.5, NSFontWeightRegular, [NSColor labelColor]);
-        _costLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 15);
-        [self addSubview:_costLeftLabel];
+        // Row 1: Last 7 Days Token Usage
+        _weekUsageLeftLabel = CreateLabel(@"近 7 天 Token 消耗", 11.5, NSFontWeightRegular, [NSColor labelColor]);
+        _weekUsageLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 15);
+        [self addSubview:_weekUsageLeftLabel];
 
-        _costRightLabel = CreateLabel(@"$0.00", 11.5, NSFontWeightMedium, [NSColor labelColor]);
-        _costRightLabel.alignment = NSTextAlignmentRight;
-        _costRightLabel.frame = NSMakeRect(paddingX + contentW * 0.45, y, contentW * 0.55, 15);
-        [self addSubview:_costRightLabel];
+        _weekUsageRightLabel = CreateLabel(@"0 ($0.00)", 11.5, NSFontWeightMedium, [NSColor labelColor]);
+        _weekUsageRightLabel.alignment = NSTextAlignmentRight;
+        _weekUsageRightLabel.frame = NSMakeRect(paddingX + contentW * 0.45, y, contentW * 0.55, 15);
+        [self addSubview:_weekUsageRightLabel];
         y += 18.0;
 
-        // Row 2: Cache
-        _cacheLeftLabel = CreateLabel(@"上下文缓存节省", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        // Row 2: Cache Hit Rate & Savings
+        _cacheLeftLabel = CreateLabel(@"上下文缓存命中率", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
         _cacheLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 14);
         [self addSubview:_cacheLeftLabel];
 
@@ -299,7 +301,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         [self addSubview:_cacheRightLabel];
         y += 17.0;
 
-        // Row 3: IO Tokens
+        // Row 3: Input / Output Tokens
         _tokensLeftLabel = CreateLabel(@"输入 / 输出 Token", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
         _tokensLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 14);
         [self addSubview:_tokensLeftLabel];
@@ -308,6 +310,17 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
         _tokensRightLabel.alignment = NSTextAlignmentRight;
         _tokensRightLabel.frame = NSMakeRect(paddingX + contentW * 0.45, y, contentW * 0.55, 14);
         [self addSubview:_tokensRightLabel];
+        y += 17.0;
+
+        // Row 4: Today's Token Usage
+        _todayUsageLeftLabel = CreateLabel(@"今日 Token 消耗", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _todayUsageLeftLabel.frame = NSMakeRect(paddingX, y, contentW * 0.45, 14);
+        [self addSubview:_todayUsageLeftLabel];
+
+        _todayUsageRightLabel = CreateLabel(@"0 ($0.00)", 11.0, NSFontWeightRegular, [NSColor secondaryLabelColor]);
+        _todayUsageRightLabel.alignment = NSTextAlignmentRight;
+        _todayUsageRightLabel.frame = NSMakeRect(paddingX + contentW * 0.45, y, contentW * 0.55, 14);
+        [self addSubview:_todayUsageRightLabel];
     }
     return self;
 }
@@ -390,20 +403,38 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
     [self.geminiWeeklyRow setRemainingFraction:geminiWeeklyFraction resetText:geminiWeeklyReset];
     [self.thirdPartyRow setRemainingFraction:thirdPartyFraction resetText:thirdPartyReset];
 
-    // Usage & Summary
+    // Usage & Summary (Usage-first sequence)
+    NSDictionary *last7d = stats[@"last_7d"];
+    NSDictionary *today = stats[@"today"];
+
     if (summary) {
         long long total = [summary[@"total_tokens"] longLongValue];
         long long prompt = [summary[@"prompt_tokens"] longLongValue];
         long long output = [summary[@"output_tokens"] longLongValue];
         long long cached = [summary[@"cached_tokens"] longLongValue];
-        double costUsd = [summary[@"cost_usd"] doubleValue];
         double savedUsd = [summary[@"saved_usd"] doubleValue];
 
         double cacheRate = (total > 0) ? ((double)cached / (double)total) * 100.0 : 0.0;
 
-        self.costRightLabel.stringValue = [NSString stringWithFormat:@"$%.2f (%@ Tokens)", costUsd, FormatTokens(total)];
+        // Row 1: Last 7 Days Token Usage
+        long long weekTokens = [last7d[@"total_tokens"] longLongValue];
+        double weekCost = [last7d[@"cost_usd"] doubleValue];
+        if (weekTokens == 0) {
+            weekTokens = total;
+            weekCost = [summary[@"cost_usd"] doubleValue];
+        }
+        self.weekUsageRightLabel.stringValue = [NSString stringWithFormat:@"%@ ($%.2f)", FormatTokens(weekTokens), weekCost];
+
+        // Row 2: Cache Hit Rate & Savings
         self.cacheRightLabel.stringValue = [NSString stringWithFormat:@"%.1f%% (省下 $%.2f)", cacheRate, savedUsd];
+
+        // Row 3: Input / Output Tokens
         self.tokensRightLabel.stringValue = [NSString stringWithFormat:@"%@ / %@", FormatTokens(prompt), FormatTokens(output)];
+
+        // Row 4: Today's Token Usage
+        long long todayTokens = [today[@"total_tokens"] longLongValue];
+        double todayCost = [today[@"cost_usd"] doubleValue];
+        self.todayUsageRightLabel.stringValue = [NSString stringWithFormat:@"%@ ($%.2f)", FormatTokens(todayTokens), todayCost];
     }
 }
 
@@ -438,8 +469,8 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
     // Accessory menu bar extra: no Dock icon, never steal window focus
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
 
-    // Card frame: 310 x 284
-    self.cardView = [[AntigravityCardView alloc] initWithFrame:NSMakeRect(0, 0, CARD_WIDTH, 284.0)];
+    // Card frame: 310 x 304
+    self.cardView = [[AntigravityCardView alloc] initWithFrame:NSMakeRect(0, 0, CARD_WIDTH, 304.0)];
 
     [self setupStatusItem];
     [self fetchStats];
