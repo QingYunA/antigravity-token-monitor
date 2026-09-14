@@ -1,11 +1,11 @@
 <div align="center">
 
-<img src="./assets/logo.svg" width="68" height="68" alt="Antigravity Token Monitor Logo">
+<img src="./assets/logo.svg" width="64" height="64" alt="Antigravity Token Monitor Logo">
 
 # Antigravity Token Monitor
 
-<p><strong>Local real-time token usage and official quota monitor for Google DeepMind Antigravity.</strong><br>
-Includes a native macOS menu bar card, lightweight Web dashboard, and terminal CLI. Zero external dependencies, zero network intrusion.</p>
+<p><strong>Local real-time token spend and official quota monitor for Google DeepMind Antigravity.</strong><br>
+Includes a native macOS menu bar app, responsive Web dashboard, and terminal CLI. Zero external dependencies, zero data leakage.</p>
 
 <p>
   <a href="https://github.com/QingYunA/antigravity-token-monitor/releases"><img src="https://img.shields.io/github/v/release/QingYunA/antigravity-token-monitor?style=flat&color=38bdf8" alt="Release"></a>
@@ -26,53 +26,55 @@ Includes a native macOS menu bar card, lightweight Web dashboard, and terminal C
 
 ---
 
+<!-- Visuals first: Real macOS menu bar card and Web dashboard -->
 <div align="center">
-  <img src="./assets/menu_bar_card.png" width="380" alt="Antigravity Monitor macOS Menu Bar Card">
-  <p><em>Native macOS menu bar extra: Live 7-day & today token consumption, cache hit rate, and official 5-hour/weekly quota countdown.</em></p>
+  <img src="./assets/menu_bar_card.png" width="360" alt="Antigravity Monitor macOS Menu Bar Card">
+  <p><em>macOS menu bar extra: Instant 7-day/daily token burn, cache hit savings, and 5h/weekly quota countdown</em></p>
+  <br>
+  <img src="./assets/web_dashboard.png" width="860" alt="Antigravity Monitor Web Dashboard">
+  <p><em>Responsive Web dashboard: Native SVG 1:1 pixel timeline, model breakdowns, and step-by-step thinking tokens</em></p>
 </div>
 
 ---
 
 ## Why Antigravity Token Monitor?
 
-When pair-programming heavily with Google DeepMind Antigravity, coding agents frequently call Gemini models under the hood, consuming significant volumes of tokens.
+When coding heavily with Google DeepMind Antigravity, background agents call models frequently, consuming tokens at high velocity.
 
-In daily workflow:
-1. **Quota Black Box**: You only realize limits are reached when hit by `ResourceExhausted` errors.
-2. **Invisible Spend**: Hard to see how many tokens a complex subagent task burned, or how much prompt caching saved you.
-3. **Privacy Concerns**: Monitoring shouldn't require shipping your session logs or code to third-party cloud services.
+Developers face three everyday frustrations:
+1. **Quota Black Box**: Antigravity offers no persistent desktop widget. You only notice limits when hitting `ResourceExhausted` errors.
+2. **Invisible Spend**: Hard to tell how many tokens a complex task consumed, or how much prompt caching actually saved.
+3. **Privacy Concerns**: Many cloud monitoring tools require transmitting session logs and code to third-party servers.
 
-**Antigravity Token Monitor** operates entirely locally. It parses local SQLite files and queries the local Language Server process. No API keys needed, zero outbound network telemetry.
+**Antigravity Token Monitor** runs entirely locally. It parses local SQLite databases and queries the local Language Server process. No API keys required, zero outbound telemetry, ready out of the box.
 
 ---
 
 ## Features
 
-- **Native macOS Menu Bar App:** Built with pure Objective-C & AppKit. Tiny 200KB binary, consumes ~15MB RAM, runs out-of-the-box.
-- **Usage-First Layout:** Status card prioritizes 7-day and daily token volume along with cache hit savings, complemented by official pricing estimates.
-- **Official Quota Countdown:** Direct local IPC connection to the Language Server for exact 5-hour and weekly quota percentages and reset timers. Auto-flags red and triggers macOS notifications below 10%.
-- **Bilingual i18n Support:** Hot-swap between English and Chinese in both the menu bar app and the Web UI. Preferences persist in system defaults and `localStorage`.
-- **Responsive Web Dashboard:** Pure vanilla HTML/CSS/JS in a single file with zero npm dependencies. Supports light/dark mode and aggregation over Today, 7D, 30D, and All-Time.
-- **Step-by-Step Pulse Inspector:** Inspect individual interaction steps with prompt, thinking, output, and cache token breakdowns.
-- **Zero Network Intrusion:** Reads strictly from `~/.gemini/antigravity` locally. Never transmits code, prompts, or conversation contents externally.
+- **Native macOS Menu Bar App:** Written in pure Objective-C and AppKit. Tiny 200KB binary, ~15MB RAM footprint, runs without installation.
+- **Official Quota Countdown:** Direct local IPC connection to the Language Server. Displays exact 5-hour and weekly quota remaining percentages and reset timers. Flags red below 10%.
+- **Undistorted 1:1 Pixel Charts:** Pure vanilla SVG. Seamlessly switch between **Area Trend** and **Histogram** modes. Uses dynamic container pixels to eliminate aspect-ratio warping and text blur, complete with debounced `ResizeObserver`.
+- **Thinking Token Breakdown:** Inspects deep reasoning tokens from Gemini 3.8 and Claude models, including their percentage of total output.
+- **Step Pulse & Session Details:** Reconstructs token consumption for every interaction step (input, thinking, output, and cache hit) along with estimated costs.
+- **Bilingual & Dual Themes:** One-click language switch (`[ 中文 | EN ]`) and light/dark theme toggle across both menu bar and Web UI.
+- **Zero Network Intrusion:** Reads exclusively from local `~/.gemini/antigravity` storage. Never uploads code, prompts, or conversation contents.
 
 ---
 
 ## Quickstart
 
-### Option A: Prebuilt macOS App (Recommended)
+### Option 1: macOS DMG Installer (Recommended)
 
-1. Download `Antigravity-Monitor-macOS-Universal.zip` from [Releases](https://github.com/QingYunA/antigravity-token-monitor/releases/latest).
-2. Unzip and drag `Antigravity Monitor.app` into `/Applications` (or any directory).
-3. Open the app to see the Antigravity Quantum Core icon in your macOS menu bar.
+1. Download `Antigravity-Monitor-macOS-Universal.dmg` from the [Releases page](https://github.com/QingYunA/antigravity-token-monitor/releases/latest).
+2. Open the DMG image and drag `Antigravity Monitor` into your `Applications` folder.
+3. Open the app from Launchpad or Spotlight. The monitor icon will pin to your macOS menu bar.
 
-> **Note**: Packaged as a Universal Binary, running natively on both Apple Silicon (M1/M2/M3/M4) and Intel Macs.
+> **Note**: Universal Binary built natively for both Apple Silicon (M1/M2/M3/M4) and Intel Macs.
 
 ---
 
-### Option B: Build from Source
-
-Clone and build with one command:
+### Option 2: Build from Source
 
 ```bash
 git clone https://github.com/QingYunA/antigravity-token-monitor.git
@@ -81,15 +83,18 @@ cd antigravity-token-monitor
 # Compile and launch immediately
 ./macos/build.sh run
 
+# Package into a native macOS DMG installer
+./macos/build.sh dmg
+
 # Or install directly to /Applications
 ./macos/build.sh install
 ```
 
 ---
 
-### Option C: Launch Web Dashboard
+### Option 3: Launch Web Dashboard
 
-For interactive charts, 30-day trends, and full session breakdowns:
+For 30-day analytics, time-series curves, or step-by-step thinking tokens:
 
 ```bash
 python3 server.py
@@ -97,13 +102,13 @@ python3 server.py
 
 Open [http://127.0.0.1:8765](http://127.0.0.1:8765) in your browser.
 
-- Instant light/dark theme toggle.
-- `[ 中文 | EN ]` toggle in top navigation.
-- Today, 7-Day, 30-Day, and All-Time filters.
+- Instant light and dark mode toggling.
+- `[ 中文 | EN ]` language switch with live currency conversion.
+- Area trend and histogram toggle with hairline cursor and clean tooltips.
 
 ---
 
-### Option D: Terminal CLI
+### Option 4: Terminal CLI
 
 Quick terminal check while coding:
 
@@ -111,15 +116,35 @@ Quick terminal check while coding:
 python3 cli.py
 ```
 
+Example output:
+```text
+============================================================
+              ANTIGRAVITY TOKEN MONITOR REPORT              
+============================================================
+📅 Period: 2026-03-08 to 2026-03-14 (Last 7 Days)
+------------------------------------------------------------
+📊 Token Burn Overview:
+   • Total Tokens:     2.28B Tokens (Est. Cost: $70.46)
+   • Cache Hit:        2.15B Tokens (Saved: $160.95)
+   • Cache Hit Rate:   94.0%
+------------------------------------------------------------
+⏱️ Official Quota Status:
+   • Gemini 5h Limit:  63.1% Remaining (Resets in: 4h 08m)
+   • Weekly Limit:     93.9% Remaining (Resets in: 6d 23h)
+============================================================
+```
+
 ---
 
 ## How It Works
 
-| Data | Source | Details |
+Runs strictly on local data generated by Antigravity:
+
+| Metric | Source | Mechanism |
 | :--- | :--- | :--- |
-| **Official Quota & Reset Timers** | Local Connect-RPC | Discovers local `antigravity-language-server` process and CSRF tokens, invoking `RetrieveUserQuotaSummary` for real-time quota data. |
-| **Token Usage & Pricing** | Local SQLite Parsing | Reads `~/.gemini/antigravity/conversations/*.db`, decoding `gen_metadata` Protobuf payloads for exact prompt, output, thinking, and cached tokens. |
-| **Zero Dependencies** | Python 3 Standard Library | Backend uses built-in `http.server`, `sqlite3`, `urllib`, and `threading`. |
+| **Official Quota & Reset Timers** | Local Connect-RPC | Scans local `antigravity-language-server` ports and CSRF tokens, invoking `RetrieveUserQuotaSummary` via local RPC. |
+| **Token Volume & Spend** | Local SQLite Databases | Reads `~/.gemini/antigravity/conversations/*.db`, decoding Protobuf payloads for exact prompt, output, thinking, and cached token billing. |
+| **Zero-Dependency Core** | Python 3 Standard Library | Backend requires zero pip packages (built on `http.server`, `sqlite3`, `urllib`, and `threading`). |
 
 ---
 
@@ -134,12 +159,14 @@ python3 cli.py
 
 ---
 
-## Tests
+## Automated Tests
 
 Run the full automated test suite:
 
 ```bash
-python3 -m unittest discover -p "test_*.py"
+python3 run_tests.py
+# Or using standard unittest discovery
+python3 -m unittest discover -s . -p "test_*.py"
 ```
 
 ---

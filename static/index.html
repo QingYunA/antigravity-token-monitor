@@ -23,7 +23,25 @@
       --radius: 12px;
       --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
       --card-title-color: #0f172a;
+      --card: #ffffff;
+      --card-fg: #0f172a;
+      --muted-fg: #64748b;
+      --ok: #16a34a;
+      --primary: #0f172a;
+      --primary-fg: #f8fafc;
+      --badge-bg: #0f172a;
+      --badge-border: #1e293b;
+      --badge-fg: #f8fafc;
+      --warn: #d97706;
+      --chart-indigo: #6366f1;
+      --chart-emerald: #10b981;
+      --chart-amber: #f59e0b;
+      --chart-rose: #f43f5e;
+      --chart-violet: #8b5cf6;
+      --chart-cyan: #06b6d4;
+      --chart-slate: #64748b;
       --table-header-bg: #f8fafc;
+      --table-row-hover: #f8fafc;
       --table-row-hover: #f8fafc;
       --pill-bg: #f1f5f9;
       --pill-border: #e2e8f0;
@@ -55,6 +73,23 @@
       --radius: 12px;
       --card-shadow: none;
       --card-title-color: #ffffff;
+      --card: #12151e;
+      --card-fg: #f1f5f9;
+      --muted-fg: #8e9bb0;
+      --primary: #f8fafc;
+      --primary-fg: #0f172a;
+      --badge-bg: #1a202e;
+      --badge-border: #2d374d;
+      --badge-fg: #f1f5f9;
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --chart-indigo: #818cf8;
+      --chart-emerald: #34d399;
+      --chart-amber: #fbbf24;
+      --chart-rose: #fb7185;
+      --chart-violet: #a78bfa;
+      --chart-cyan: #22d3ee;
+      --chart-slate: #94a3b8;
       --table-header-bg: #151924;
       --table-row-hover: #171b26;
       --pill-bg: #202636;
@@ -332,6 +367,54 @@
       border-radius: 4px;
       font-weight: 600;
       font-size: 11.5px;
+    }
+
+    /* Agent-HTML Chart Card Styles (Zero-AI-slop, Pure Enterprise Aesthetics) */
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
+      padding: 20px 24px;
+    }
+    .chart-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--card-fg);
+    }
+    .chart-desc {
+      font-size: 12px;
+      color: var(--muted-fg);
+      margin-top: 2px;
+    }
+    .chart-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: var(--card);
+      color: var(--card-fg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      opacity: 0;
+      transition: opacity 0.12s ease;
+      z-index: 50;
+      min-width: 180px;
+      transform: translate(-50%, -100%) translateY(-10px);
+    }
+    [data-theme="dark"] .chart-tooltip {
+      background: #18181b;
+      border-color: #27272a;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     }
 
     /* Quota Section */
@@ -772,19 +855,41 @@
       </div>
     </div>
 
-    <!-- Dynamic Trend Chart Section -->
-    <div class="card" style="margin-bottom: 24px; padding: 20px;">
-      <div class="section-title" style="margin-bottom: 8px;">
-        <span id="chartSectionTitle">Token 消耗时序趋势 (近 7 天)</span>
-        <div style="font-size: 11.5px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
-          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #0284c7; border-radius: 2px;"></span> <span id="legendCached">缓存命中</span></span>
-          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #6366f1; border-radius: 2px;"></span> <span id="legendPrompt">新输入</span></span>
-          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #10b981; border-radius: 2px;"></span> <span id="legendOutput">正文输出</span></span>
-          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #8b5cf6; border-radius: 2px;"></span> <span id="legendThinking">深度思考</span></span>
+    <!-- Dynamic Trend Chart Section (agent-html Pure Enterprise Aesthetics) -->
+    <div class="card chart-card" style="margin-bottom: 24px; padding: 20px 24px;">
+      <!-- ① 结论式标题 ② 副标题写单位契约 -->
+      <div class="chart-head">
+        <div>
+          <div class="chart-title" id="chartSectionTitle">Token 消耗时序走势</div>
+          <div class="chart-desc" id="chartDescText">1 tick = 1 天 · 虚线导轨 = 整数刻度 · 峰值落在 09-13</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <!-- 纯净切换器: 走势图 / 柱状图 -->
+          <div class="segmented-control" id="chartTypeToggle" style="padding: 2px;">
+            <button class="segment-btn active" id="btnTypeArea" onclick="switchChartType('area')" style="padding: 4px 10px; font-size: 12px;">走势图</button>
+            <button class="segment-btn" id="btnTypeBar" onclick="switchChartType('bar')" style="padding: 4px 10px; font-size: 12px;">柱状图</button>
+          </div>
+          <span class="badge" id="chartPeriodBadge" style="font-size: 11px;"><span class="badge-dot"></span><span id="chartPeriodText">近 7 天</span></span>
         </div>
       </div>
-      <div id="trendChartSvgContainer" style="width: 100%; height: 160px; margin-top: 14px;"></div>
+
+      <!-- ③ 图体容器与悬浮提示 -->
+      <div id="chartWrapper" style="position: relative; width: 100%; height: 175px; margin-top: 10px;">
+        <div id="trendChartSvgContainer" style="width: 100%; height: 100%;"></div>
+        <div id="chartTooltip" class="chart-tooltip"></div>
+      </div>
+
+      <!-- ④ 底部编码说明行 (agent-html 标准契约) -->
+      <div id="chartFootnote" style="font-size: 10px; letter-spacing: .08em; color: var(--muted-fg); margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span id="chartFootnoteLeft">面积 = 累计 Token 吞吐 · 绿点与气泡 = 周期峰值 · 虚线 = 参考导轨 · 1 tick = 1 天</span>
+        <span id="chartFootnoteRight" style="display: flex; gap: 12px; letter-spacing: normal;">
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--chart-indigo);"></span> 走势曲线</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--ok);"></span> 当日峰值</span>
+        </span>
+      </div>
     </div>
+
+
 
     <!-- Official Quota Cards (from Language Server RPC) -->
     <div class="section-title">
@@ -914,7 +1019,14 @@
         thinkingLabel: "深度思考消耗",
         thinkingPercentPrefix: "占输出 ",
         avgCostLabel: "平均/1M",
-        chartTitlePrefix: "Token 消耗时序趋势",
+        chartTitlePrefix: "Token 消耗时序走势",
+        chartTypeArea: "走势图",
+        chartTypeBar: "柱状图",
+        chartAvgLabel: "日均",
+        chartPeakLabel: "峰值",
+        chartModeAll: "全量 (含缓存)",
+        chartModeNet: "净消耗 (生成/输入)",
+        chartTooltipNoData: "该日暂无活跃记录",
         legendCached: "缓存命中",
         legendPrompt: "新输入",
         legendOutput: "正文输出",
@@ -980,6 +1092,13 @@
         thinkingPercentPrefix: "of output ",
         avgCostLabel: "Avg/1M",
         chartTitlePrefix: "Token Consumption Trend",
+        chartTypeArea: "Area Trend",
+        chartTypeBar: "Histogram",
+        chartAvgLabel: "Daily Avg",
+        chartPeakLabel: "Peak",
+        chartModeAll: "All (With Cache)",
+        chartModeNet: "Net (Gen/Input)",
+        chartTooltipNoData: "No activity recorded",
         legendCached: "Cache Hit",
         legendPrompt: "New Input",
         legendOutput: "Output",
@@ -1049,10 +1168,10 @@
       document.getElementById('i18nCacheLabel').innerText = t('cacheLabel');
       document.getElementById('i18nThinkingLabel').innerText = t('thinkingLabel');
       document.getElementById('i18nAvgCostLabel').innerText = t('avgCostLabel');
-      document.getElementById('legendCached').innerText = t('legendCached');
-      document.getElementById('legendPrompt').innerText = t('legendPrompt');
-      document.getElementById('legendOutput').innerText = t('legendOutput');
-      document.getElementById('legendThinking').innerText = t('legendThinking');
+      const btnArea = document.getElementById('btnTypeArea');
+      if (btnArea) btnArea.innerText = t('chartTypeArea');
+      const btnBar = document.getElementById('btnTypeBar');
+      if (btnBar) btnBar.innerText = t('chartTypeBar');
       document.getElementById('i18nQuotaSectionTitle').innerText = t('quotaTitle');
       document.getElementById('i18nSessTitle').innerText = t('sessTitle');
       document.getElementById('thSessTitle').innerText = t('thTitle');
@@ -1078,7 +1197,9 @@
       document.getElementById('themeIconMoon').style.display = isLight ? 'none' : 'inline';
       document.getElementById('themeLabelText').innerText = isLight ? t('themeLight') : t('themeDark');
 
-      if (globalData) {
+      if (currentTimelineData && currentTimelineData.length) {
+        renderTrendChart(currentTimelineData);
+      } else if (globalData) {
         renderTrendChart(globalData.daily_timeline || []);
       }
     }
@@ -1206,6 +1327,7 @@
       // 5. Trend SVG Chart (Slice according to time range)
       const fullTimeline = data.daily_timeline || [];
       const slicedTimeline = fullTimeline.slice(-chartDays);
+      currentTimelineData = slicedTimeline;
       renderTrendChart(slicedTimeline);
 
       // 6. Quota Cards
@@ -1225,68 +1347,350 @@
       }
     }
 
+    // Chart Type State: 'area' (Area Trend Line Chart) vs 'bar' (Slender Column Histogram)
+    let currentChartType = 'area';
+    let currentTimelineData = [];
+
+    function switchChartType(type) {
+      currentChartType = type;
+      const btnArea = document.getElementById('btnTypeArea');
+      const btnBar = document.getElementById('btnTypeBar');
+      if (btnArea) btnArea.classList.toggle('active', type === 'area');
+      if (btnBar) btnBar.classList.toggle('active', type === 'bar');
+
+      const isEn = (currentLanguage === 'en');
+      const footnoteLeft = document.getElementById('chartFootnoteLeft');
+      const footnoteRight = document.getElementById('chartFootnoteRight');
+      if (type === 'area') {
+        if (footnoteLeft) {
+          footnoteLeft.innerText = isEn 
+            ? "Area = Cumulative Token throughput · Green dot & Badge = Period peak · Dashed line = Reference guide · 1 tick = 1 day"
+            : "面积 = 累计 Token 吞吐 · 绿点与气泡 = 周期峰值 · 虚线 = 参考导轨 · 1 tick = 1 天";
+        }
+        if (footnoteRight) {
+          footnoteRight.innerHTML = `
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--chart-indigo);"></span> ${isEn ? 'Area Trend' : '走势曲线'}</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--ok);"></span> ${isEn ? 'Period Peak' : '周期峰值'}</span>
+          `;
+        }
+      } else {
+        if (footnoteLeft) {
+          footnoteLeft.innerText = isEn
+            ? "Bar height = Daily Token throughput · Amber bar = Period peak · Indigo bar = Regular day · 1 tick = 1 day"
+            : "柱长 = 当日 Token 消耗 · 琥珀柱 = 本周期最高峰值 · 蓝柱 = 常规日消耗 · 1 tick = 1 天";
+        }
+        if (footnoteRight) {
+          footnoteRight.innerHTML = `
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--chart-indigo);"></span> ${isEn ? 'Regular Day' : '常规日'}</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--warn);"></span> ${isEn ? 'Peak Day' : '峰值日'}</span>
+          `;
+        }
+      }
+
+      if (currentTimelineData && currentTimelineData.length) {
+        renderTrendChart(currentTimelineData);
+      }
+    }
+
+    function getNiceMax(val) {
+      if (val <= 0) return 100;
+      const mag = Math.pow(10, Math.floor(Math.log10(val)));
+      const frac = val / mag;
+      let niceFrac;
+      if (frac <= 1.2) niceFrac = 1.2;
+      else if (frac <= 2) niceFrac = 2;
+      else if (frac <= 2.5) niceFrac = 2.5;
+      else if (frac <= 5) niceFrac = 5;
+      else if (frac <= 8) niceFrac = 8;
+      else niceFrac = 10;
+      return niceFrac * mag;
+    }
+
     function renderTrendChart(timeline) {
+      currentTimelineData = timeline || [];
       const container = document.getElementById('trendChartSvgContainer');
       if (!timeline || !timeline.length) {
-        container.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; text-align: center; padding-top: 40px;">暂无历史时序数据</div>`;
+        container.innerHTML = `<div style="color: var(--muted-fg); font-size: 13px; text-align: center; padding-top: 50px;">暂无历史时序数据</div>`;
         return;
       }
 
-      const isDark = (currentTheme === 'dark');
-      const textColor = isDark ? '#94a3b8' : '#64748b';
-      const labelColor = isDark ? '#64748b' : '#94a3b8';
-
-      const maxVal = Math.max(...timeline.map(d => (d.prompt + d.cached + d.output)), 1);
-      const width = 840;
-      const height = 150;
-      const padding = 20;
-      const count = timeline.length;
-      const gap = (width - padding * 2) / count;
-      const barWidth = Math.max(8, Math.min(32, gap * 0.7));
-
-      let svg = `<svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: 100%; overflow: visible;">`;
-
-      timeline.forEach((d, i) => {
-        const x = padding + i * gap + (gap - barWidth) / 2;
-        const total = d.prompt + d.cached + d.output;
-
-        const hCached = ((d.cached || 0) / maxVal) * (height - 38);
-        const hPrompt = ((d.prompt || 0) / maxVal) * (height - 38);
-        const hOutput = (((d.output || 0) - (d.thinking || 0)) / maxVal) * (height - 38);
-        const hThinking = ((d.thinking || 0) / maxVal) * (height - 38);
-
-        let yCurrent = height - 22;
-
-        // Cached
-        yCurrent -= hCached;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hCached}" fill="#0284c7" rx="2"><title>${d.day} ${t('legendCached')}: ${formatNumber(d.cached)}</title></rect>`;
-
-        // Prompt
-        yCurrent -= hPrompt;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hPrompt}" fill="#6366f1" rx="2"><title>${d.day} ${t('legendPrompt')}: ${formatNumber(d.prompt)}</title></rect>`;
-
-        // Output
-        yCurrent -= hOutput;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hOutput}" fill="#10b981" rx="2"><title>${d.day} ${t('legendOutput')}: ${formatNumber(d.output)}</title></rect>`;
-
-        // Thinking
-        yCurrent -= hThinking;
-        svg += `<rect x="${x}" y="${yCurrent}" width="${barWidth}" height="${hThinking}" fill="#8b5cf6" rx="2"><title>${d.day} ${t('legendThinking')}: ${formatNumber(d.thinking)}</title></rect>`;
-
-        // Day label
-        if (count <= 14 || i % 3 === 0 || i === count - 1) {
-          svg += `<text x="${x + barWidth / 2}" y="${height - 4}" fill="${labelColor}" font-size="10.5" font-weight="500" text-anchor="middle">${d.day}</text>`;
-        }
-
-        // Top value text
-        if (total > 0 && (count <= 14 || i % 2 === 0)) {
-          svg += `<text x="${x + barWidth / 2}" y="${Math.max(12, yCurrent - 4)}" fill="${textColor}" font-size="9.5" font-weight="600" text-anchor="middle">${formatCompact(total)}</text>`;
+      // 1. Calculate Summary Stats for header
+      let totalTokensInWindow = 0;
+      let peakDay = timeline[0];
+      let peakTokens = 0;
+      timeline.forEach(d => {
+        const dTot = (d.prompt || 0) + (d.cached || 0) + (d.output || 0);
+        totalTokensInWindow += dTot;
+        if (dTot > peakTokens) {
+          peakTokens = dTot;
+          peakDay = d;
         }
       });
+      const dailyAvg = timeline.length > 0 ? (totalTokensInWindow / timeline.length) : 0;
+      const isEn = (currentLanguage === 'en');
+      const descEl = document.getElementById('chartDescText');
+      if (descEl) {
+        descEl.innerText = isEn
+          ? `1 tick = 1 day · Dashed guide = Round scale · Peak on ${peakDay.day} (${formatCompact(peakTokens)}) · Daily avg ${formatCompact(dailyAvg)}`
+          : `1 tick = 1 天 · 虚线导轨 = 整数刻度 · 峰值落在 ${peakDay.day} (${formatCompact(peakTokens)}) · 日均消耗 ${formatCompact(dailyAvg)}`;
+      }
+      const periodBadgeText = document.getElementById('chartPeriodText');
+      if (periodBadgeText) {
+        periodBadgeText.innerText = isEn ? `${timeline.length} Days` : `${timeline.length} 天时序`;
+      }
+
+      // 2. Compute Max Value & Nice Max for Grid
+      const rawMax = Math.max(...timeline.map(d => (d.prompt || 0) + (d.cached || 0) + (d.output || 0)), 10);
+      const niceMax = getNiceMax(rawMax);
+
+      // 3. Layout Dimensions: use exact container clientWidth to guarantee 1:1 pixel rendering without distortion
+      const width = Math.max(320, container.clientWidth || container.getBoundingClientRect().width || 840);
+      const height = 175;
+      const padLeft = 48;
+      const padRight = 24;
+      const padTop = 26;
+      const padBottom = 26;
+      const chartW = width - padLeft - padRight;
+      const chartH = height - padTop - padBottom;
+      const baselineY = padTop + chartH;
+
+      let svg = `<svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: 100%; display: block; overflow: visible;">`;
+
+      // 4. Defs
+      svg += `
+        <defs>
+          <linearGradient id="dashAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--chart-indigo)" stop-opacity="0.20"/>
+            <stop offset="100%" stop-color="var(--chart-indigo)" stop-opacity="0.00"/>
+          </linearGradient>
+        </defs>
+      `;
+
+      // 5. Reference Guide Lines & Y-Axis Labels
+      const gridLevels = [0.25, 0.5, 0.75, 1.0];
+      gridLevels.forEach(lvl => {
+        const y = baselineY - chartH * lvl;
+        const val = niceMax * lvl;
+        svg += `<line x1="${padLeft}" y1="${y}" x2="${padLeft + chartW}" y2="${y}" stroke="var(--border)" stroke-dasharray="3 3"/>`;
+        svg += `<text x="${padLeft - 8}" y="${y + 3.5}" font-size="10" fill="var(--muted-fg)" text-anchor="end" font-family="ui-monospace, SFMono-Regular, monospace">${formatCompact(val)}</text>`;
+      });
+
+      // Baseline加重
+      svg += `<line x1="${padLeft}" y1="${baselineY}" x2="${padLeft + chartW}" y2="${baselineY}" stroke="var(--border)" stroke-width="1.5"/>`;
+      svg += `<text x="${padLeft - 8}" y="${baselineY + 3.5}" font-size="10" fill="var(--muted-fg)" text-anchor="end" font-family="ui-monospace, SFMono-Regular, monospace">0</text>`;
+
+      const count = timeline.length;
+
+      // 6. Draw Content: Area or Column
+      if (currentChartType === 'area') {
+        // --- Area Trend Line Chart (agent-html Form A) ---
+        const points = timeline.map((d, i) => {
+          const x = padLeft + (count === 1 ? chartW / 2 : (i / (count - 1)) * chartW);
+          const val = (d.prompt || 0) + (d.cached || 0) + (d.output || 0);
+          const y = baselineY - (val / niceMax) * chartH;
+          return { x, y, val, d, i };
+        });
+
+        // Smooth curve
+        let pathD = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 0; i < points.length - 1; i++) {
+          const p0 = points[i];
+          const p1 = points[i + 1];
+          const mx = (p0.x + p1.x) / 2;
+          pathD += ` C ${mx} ${p0.y}, ${mx} ${p1.y}, ${p1.x} ${p1.y}`;
+        }
+        const areaD = `${pathD} L ${points[points.length - 1].x} ${baselineY} L ${points[0].x} ${baselineY} Z`;
+
+        // Area & Stroke
+        svg += `<path d="${areaD}" fill="url(#dashAreaGrad)"/>`;
+        svg += `<path d="${pathD}" fill="none" stroke="var(--chart-indigo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+        // Rim tick dots along baseline
+        svg += `<g fill="var(--muted-fg)">`;
+        points.forEach(p => {
+          svg += `<circle cx="${p.x}" cy="${baselineY + 5}" r="1.5"/>`;
+        });
+        svg += `</g>`;
+
+        // Date labels
+        points.forEach(p => {
+          svg += `<text x="${p.x}" y="${baselineY + 18}" font-size="10" fill="var(--muted-fg)" text-anchor="middle">${p.d.day}</text>`;
+        });
+
+        // Peak Furniture (Callout + Lead Line + Ok Circle)
+        const pPeak = points.reduce((prev, curr) => (curr.val > prev.val ? curr : prev), points[0]);
+        if (pPeak && pPeak.val > 0) {
+          const bubbleY = Math.max(14, pPeak.y - 19);
+          svg += `<line x1="${pPeak.x}" y1="${pPeak.y}" x2="${pPeak.x}" y2="${pPeak.y - 8}" stroke="var(--chart-indigo)" stroke-width="1" stroke-dasharray="2 2"/>`;
+          svg += `<circle cx="${pPeak.x}" cy="${pPeak.y}" r="4" fill="var(--ok)" stroke="var(--card)" stroke-width="2"/>`;
+          svg += `
+            <g transform="translate(${pPeak.x}, ${bubbleY})">
+              <rect x="-32" y="-11" width="64" height="22" rx="6" fill="var(--badge-bg)" stroke="var(--badge-border)" stroke-width="1"/>
+              <text x="0" y="4" font-size="11" font-weight="600" fill="var(--badge-fg)" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">${formatCompact(pPeak.val)}</text>
+            </g>
+          `;
+        }
+
+        // Regular non-zero dots
+        points.forEach(p => {
+          if (p.val > 0 && p !== pPeak) {
+            svg += `<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="var(--card)" stroke="var(--chart-indigo)" stroke-width="1.5"/>`;
+          }
+        });
+
+        // Hover Hairline & Hitboxes
+        const slotW = chartW / count;
+        points.forEach((p, i) => {
+          svg += `
+            <g class="chart-slot-group" data-index="${i}">
+              <line class="hover-hairline" id="hairline${i}" x1="${p.x}" y1="${padTop - 4}" x2="${p.x}" y2="${baselineY}" stroke="var(--muted-fg)" stroke-dasharray="2 2" stroke-width="1" opacity="0" pointer-events="none"/>
+              <circle class="hover-focus-dot" id="focusDot${i}" cx="${p.x}" cy="${p.y}" r="5" fill="var(--chart-indigo)" stroke="var(--card)" stroke-width="2" opacity="0" pointer-events="none"/>
+              <rect x="${p.x - slotW/2}" y="${padTop - 8}" width="${slotW}" height="${chartH + 32}" fill="transparent" style="cursor: pointer;" onmouseenter="showChartTip(event, ${i}, ${p.x})" onmousemove="moveChartTip(event, ${i}, ${p.x})" onmouseleave="hideChartTip()" />
+            </g>
+          `;
+        });
+
+      } else {
+        // --- Slender Column Histogram (agent-html Form B) ---
+        const slotW = chartW / count;
+        const barW = Math.max(14, Math.min(26, slotW * 0.40)); // Slender, calm, pure
+
+        timeline.forEach((d, i) => {
+          const x = padLeft + i * slotW + (slotW - barW) / 2;
+          const val = (d.prompt || 0) + (d.cached || 0) + (d.output || 0);
+          const isPeak = (d === peakDay && val > 0);
+          const centerX = x + barW / 2;
+
+          // Rim tick dot along baseline
+          svg += `<circle cx="${centerX}" cy="${baselineY + 5}" r="1.5" fill="var(--muted-fg)"/>`;
+
+          if (val > 0) {
+            const barH = Math.max(4, (val / niceMax) * chartH);
+            const barY = baselineY - barH;
+
+            if (isPeak) {
+              // 唯一主角：琥珀金 (agent-html 契约)
+              svg += `<rect x="${x}" y="${barY}" width="${barW}" height="${barH}" rx="3" fill="var(--warn)" opacity="0.95"/>`;
+              svg += `<line x1="${centerX}" y1="${barY}" x2="${centerX}" y2="${barY - 8}" stroke="var(--warn)" stroke-width="1" stroke-dasharray="2 2"/>`;
+              svg += `<text x="${centerX}" y="${Math.max(12, barY - 12)}" font-size="11" font-weight="700" fill="var(--warn)" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">${formatCompact(val)}</text>`;
+            } else {
+              // 常规项：深沉 Indigo，文字静默
+              svg += `<rect x="${x}" y="${barY}" width="${barW}" height="${barH}" rx="3" fill="var(--chart-indigo)" opacity="0.85"/>`;
+              svg += `<text x="${centerX}" y="${Math.max(12, barY - 6)}" font-size="10" font-weight="600" fill="var(--muted-fg)" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">${formatCompact(val)}</text>`;
+            }
+          }
+
+          // Date text
+          svg += `<text x="${centerX}" y="${baselineY + 18}" font-size="10" fill="var(--muted-fg)" text-anchor="middle">${d.day}</text>`;
+
+          // Hitbox
+          svg += `
+            <g class="chart-slot-group" data-index="${i}">
+              <line class="hover-hairline" id="hairline${i}" x1="${centerX}" y1="${padTop - 4}" x2="${centerX}" y2="${baselineY}" stroke="var(--muted-fg)" stroke-dasharray="2 2" stroke-width="1" opacity="0" pointer-events="none"/>
+              <rect x="${x - (slotW - barW)/2}" y="${padTop - 8}" width="${slotW}" height="${chartH + 32}" fill="transparent" style="cursor: pointer;" onmouseenter="showChartTip(event, ${i}, ${centerX})" onmousemove="moveChartTip(event, ${i}, ${centerX})" onmouseleave="hideChartTip()" />
+            </g>
+          `;
+        });
+      }
 
       svg += '</svg>';
       container.innerHTML = svg;
     }
+
+    // Chart Tooltip Hover Handlers
+    window.showChartTip = function(evt, idx, targetX) {
+      if (!currentTimelineData || !currentTimelineData[idx]) return;
+      const d = currentTimelineData[idx];
+      const tooltip = document.getElementById('chartTooltip');
+
+      const hairline = document.getElementById('hairline' + idx);
+      if (hairline) hairline.setAttribute('opacity', '0.6');
+      const focusDot = document.getElementById('focusDot' + idx);
+      if (focusDot) focusDot.setAttribute('opacity', '1');
+
+      const promptVal = d.prompt || 0;
+      const cachedVal = d.cached || 0;
+      const outputVal = d.output || 0;
+      const thinkingVal = d.thinking || 0;
+      const contentVal = Math.max(0, outputVal - thinkingVal);
+      const grandTotal = promptVal + cachedVal + outputVal;
+
+      if (grandTotal === 0) {
+        tooltip.innerHTML = `
+          <div style="font-weight: 600; font-size: 12px; color: var(--card-fg); margin-bottom: 2px;">📅 ${d.day}</div>
+          <div style="color: var(--muted-fg); font-size: 11px;">无活跃 Token 消耗记录</div>
+        `;
+      } else {
+        const costUsd = d.cost_usd || 0;
+        const costCny = costUsd * (globalData?.exchange_rate || 7.2);
+        const costStr = formatCurrency(costUsd, costCny);
+        const calcPct = (v) => grandTotal > 0 ? ((v / grandTotal) * 100).toFixed(1) + '%' : '0%';
+
+        tooltip.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600;">
+            <span>📅 ${d.day}</span>
+            <span style="color: var(--ok);">${costStr}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11.5px;">
+            <span style="color: var(--muted-fg);">总计 Token:</span>
+            <strong>${formatNumber(grandTotal)}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+            <span style="color: var(--muted-fg);">• 缓存命中:</span>
+            <span>${formatCompact(cachedVal)} <span style="font-size: 10px; color: var(--muted-fg);">(${calcPct(cachedVal)})</span></span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+            <span style="color: var(--muted-fg);">• 新输入:</span>
+            <span>${formatCompact(promptVal)} <span style="font-size: 10px; color: var(--muted-fg);">(${calcPct(promptVal)})</span></span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+            <span style="color: var(--muted-fg);">• 正文输出:</span>
+            <span>${formatCompact(contentVal)} <span style="font-size: 10px; color: var(--muted-fg);">(${calcPct(contentVal)})</span></span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px;">
+            <span style="color: var(--muted-fg);">• 深度思考:</span>
+            <span>${formatCompact(thinkingVal)} <span style="font-size: 10px; color: var(--muted-fg);">(${calcPct(thinkingVal)})</span></span>
+          </div>
+        `;
+      }
+
+      tooltip.style.opacity = '1';
+      positionChartTooltip(evt, targetX);
+    };
+
+    window.moveChartTip = function(evt, idx, targetX) {
+      positionChartTooltip(evt, targetX);
+    };
+
+    window.hideChartTip = function() {
+      const tooltip = document.getElementById('chartTooltip');
+      if (tooltip) tooltip.style.opacity = '0';
+      document.querySelectorAll('.hover-hairline').forEach(l => l.setAttribute('opacity', '0'));
+      document.querySelectorAll('.hover-focus-dot').forEach(d => d.setAttribute('opacity', '0'));
+    };
+
+    function positionChartTooltip(evt, targetX) {
+      const tooltip = document.getElementById('chartTooltip');
+      const wrapper = document.getElementById('chartWrapper');
+      if (!tooltip || !wrapper) return;
+      const rect = wrapper.getBoundingClientRect();
+      const mouseX = evt.clientX - rect.left;
+      const mouseY = evt.clientY - rect.top;
+
+      let left = targetX !== undefined ? targetX : mouseX;
+      let top = Math.max(10, mouseY - 12);
+
+      const tooltipWidth = tooltip.offsetWidth || 180;
+      if (left < tooltipWidth / 2 + 10) {
+        left = tooltipWidth / 2 + 10;
+      } else if (left > rect.width - tooltipWidth / 2 - 10) {
+        left = rect.width - tooltipWidth / 2 - 10;
+      }
+
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+    }
+
 
     function renderConversations(convs) {
       const tbody = document.getElementById('convTableBody');
@@ -1502,6 +1906,23 @@
         document.getElementById('liveStatusText').innerText = t('liveConnected');
       };
     }
+
+    // Responsive chart resize observer (debounced, 1:1 pixel crispness)
+    let chartResizeTimer = null;
+    function handleChartResize() {
+      clearTimeout(chartResizeTimer);
+      chartResizeTimer = setTimeout(() => {
+        if (currentTimelineData && currentTimelineData.length) {
+          renderTrendChart(currentTimelineData);
+        }
+      }, 50);
+    }
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => handleChartResize());
+      const chartCont = document.getElementById('chartWrapper');
+      if (chartCont) ro.observe(chartCont);
+    }
+    window.addEventListener('resize', handleChartResize);
 
     // Initialize
     applyTheme(currentTheme);

@@ -49,9 +49,32 @@ elif [ "$1" == "install" ]; then
     rm -rf "/Applications/${APP_BUNDLE}"
     cp -R "${APP_BUNDLE}" "/Applications/"
     echo "🎉 安装完成！你可以随时在 Launchpad 或 Spotlight (聚焦搜索) 中打开 '${APP_NAME}'。"
+elif [ "$1" == "dmg" ]; then
+    echo "💿 正在打包为 macOS DMG 磁盘映像..."
+    DMG_NAME="Antigravity-Monitor-macOS-Universal.dmg"
+    ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+    DMG_OUT="${ROOT_DIR}/${DMG_NAME}"
+    DMG_STAGING="${SCRIPT_DIR}/.dmg_staging"
+
+    rm -rf "${DMG_STAGING}" "${DMG_OUT}"
+    mkdir -p "${DMG_STAGING}"
+
+    cp -R "${APP_BUNDLE}" "${DMG_STAGING}/"
+    ln -s /Applications "${DMG_STAGING}/Applications"
+
+    hdiutil create -volname "${APP_NAME}" \
+      -srcfolder "${DMG_STAGING}" \
+      -ov -format UDZO \
+      "${DMG_OUT}"
+
+    rm -rf "${DMG_STAGING}"
+    echo ""
+    echo "🎉 DMG 打包完成: ${DMG_OUT}"
+    echo "📊 DMG 文件体积: $(du -h "${DMG_OUT}" | cut -f1)"
 else
     echo ""
     echo "💡 提示:"
     echo "  - 直接启动: ./build.sh run  (或双击打开 '${APP_BUNDLE}')"
     echo "  - 安装到系统: ./build.sh install"
+    echo "  - 打包 DMG 安装包: ./build.sh dmg"
 fi

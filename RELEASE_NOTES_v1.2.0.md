@@ -33,7 +33,8 @@
 
 ### 📦 安装与下载 / Downloads
 
-- **macOS Universal Binary**: 下载下方附件中的 `Antigravity-Monitor-macOS-Universal.zip`，解压后双击即可运行。
+- **macOS Universal DMG（推荐）**: 下载下方附件中的 `Antigravity-Monitor-macOS-Universal.dmg`，双击后将图标拖入 `Applications` 即可完成安装。
+- **macOS Universal ZIP**: 下载 `Antigravity-Monitor-macOS-Universal.zip`，解压后双击即可运行。
 - **源码运行**:
   ```bash
   git clone https://github.com/QingYunA/antigravity-token-monitor.git
