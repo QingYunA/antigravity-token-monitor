@@ -13,10 +13,10 @@
 #define CARD_WIDTH 310.0
 
 typedef NS_ENUM(NSInteger, DisplayMode) {
-    DisplayModeTokensOnly     = 0, // [Logo] 2.43B (默认：仅显示近 7 天总 Token)
-    DisplayModeQuotaAndTokens = 1, // [Logo] 94.1% · 2.43B
-    DisplayModeQuotaOnly      = 2, // [Logo] 94.1%
-    DisplayModeIconOnly       = 3  // [Logo]
+    DisplayModeQuotaAndTokens = 0, // [Logo] 94.1% · 2.43B (默认：五小时配额 + 近 7 天消耗)
+    DisplayModeTokensOnly     = 1, // [Logo] 2.43B (仅近 7 天消耗)
+    DisplayModeQuotaOnly      = 2, // [Logo] 94.1% (仅 5 小时配额)
+    DisplayModeIconOnly       = 3  // [Logo] (仅图标)
 };
 
 typedef NS_ENUM(NSInteger, AppLanguage) {
@@ -511,7 +511,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-    self.displayMode = DisplayModeTokensOnly;
+    self.displayMode = DisplayModeQuotaAndTokens;
     self.notifiedLowQuota = NO;
     self.serverAutoStartAttempted = NO;
     self.lastObservedTokens = 0;
@@ -538,7 +538,7 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     self.statusItem.button.image = CreateAntigravityLogoImage();
     self.statusItem.button.imagePosition = NSImageLeft;
-    self.statusItem.button.title = @" ...";
+    self.statusItem.button.title = @" --.-% · ...";
     self.statusItem.button.toolTip = @"Antigravity Token Monitor";
     [self buildMenu];
 }
@@ -679,11 +679,11 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
     NSString *tokenStr = FormatTokens(weekTokens);
 
     switch (self.displayMode) {
-        case DisplayModeTokensOnly:
-            self.statusItem.button.title = [NSString stringWithFormat:@" %@", tokenStr];
-            break;
         case DisplayModeQuotaAndTokens:
             self.statusItem.button.title = [NSString stringWithFormat:@" %@ · %@", quotaStr, tokenStr];
+            break;
+        case DisplayModeTokensOnly:
+            self.statusItem.button.title = [NSString stringWithFormat:@" %@", tokenStr];
             break;
         case DisplayModeQuotaOnly:
             self.statusItem.button.title = [NSString stringWithFormat:@" %@", quotaStr];
@@ -722,8 +722,8 @@ static NSTextField *CreateLabel(NSString *text, CGFloat fontSize, NSFontWeight w
     refreshItem.target = self;
     [menu addItem:refreshItem];
 
-    NSArray *modeNamesZh = @[@"仅 7 天 Token", @"配额 + Token", @"仅配额", @"仅图标"];
-    NSArray *modeNamesEn = @[@"7-Day Tokens", @"Quota + Tokens", @"Quota Only", @"Icon Only"];
+    NSArray *modeNamesZh = @[@"5h 配额 + 7天消耗", @"仅 7 天消耗", @"仅 5h 配额", @"仅图标"];
+    NSArray *modeNamesEn = @[@"5h Quota + 7D Tokens", @"7D Tokens Only", @"5h Quota Only", @"Icon Only"];
     NSString *currentMode = (CurrentAppLanguage() == AppLanguageEN) ? modeNamesEn[self.displayMode % 4] : modeNamesZh[self.displayMode % 4];
     NSString *modeTitle = [NSString stringWithFormat:Loc(@"切换顶栏格式 (%@)", @"Display Mode (%@)"), currentMode];
     NSMenuItem *modeItem = [[NSMenuItem alloc] initWithTitle:modeTitle
